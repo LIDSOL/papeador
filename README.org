@@ -1,0 +1,57 @@
+* Papeador - Juez virtual para concursos de programación competitiva
+
+
+** Diseño general de la aplicación
+
+[[./img/arqui.png]]
+
+** Modelo entidad-relación de la base de datos
+
+#+BEGIN_SRC mermaid
+erDiagram
+	CONTEST ||--|| PROBLEMA : references
+	USUARIO ||--o{ RESPUESTA : references
+	RESULTADO ||--o{ RESPUESTA : references
+	PROBLEMA ||--|| PRUEBA : references
+	PRUEBA ||--o{ RESPUESTA : references
+
+	PROBLEMA {
+		INTEGER PROBLEMA_ID
+		INTEGER CONTEST_ID
+		INTEGER NOMBRE
+		CHAR(1) DESCRIPCION
+	}
+
+	USUARIO {
+		INTEGER USUARIO_ID
+		INTEGER USERNAME
+		VARCHAR(255) PASSHASH
+		VARCHAR(255) EMAIL
+	}
+
+	CONTEST {
+		INTEGER CONTEST_ID
+		VARCHAR(255) NOMBRE
+	}
+
+	PRUEBA {
+		INTEGER NUMERO_PRUEBA  
+		BLOB INPUT
+		BLOB OUTPUT
+		INTEGER PROBLEMA_ID
+		INTEGER PRUEBA_ID
+	}
+
+	RESPUESTA {
+		INTEGER RESPUESTA_ID  
+		INTEGER USUARIO_ID
+		INTEGER RESULTADO_ID  
+		INTEGER PRUEBA_ID
+	}
+
+	RESULTADO {
+		INTEGER RESULTADO_ID  
+		INTEGER STATUS
+	}
+
+#+END_SRC
