@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 
+	"lidsol.org/papeador/api"
 	_ "modernc.org/sqlite"
 )
 
@@ -22,4 +23,5 @@ func main() {
 		fmt.Println(string(output))
 		log.Fatal(err)
 	}
+	api.API(db)
 }
