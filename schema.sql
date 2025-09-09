@@ -15,7 +15,7 @@ create table if not exists submission_status (
 create table if not exists contest (
     contest_id   integer not null primary key autoincrement,
     contest_name text    not null unique
-    -- Fecha, organizador, 
+    -- Fecha, organizador,
 );
 
 create table if not exists problem (
@@ -33,6 +33,7 @@ create table if not exists problem (
 );
 
 create table if not exists test_case (
+    test_case_id   integer not null primary key autoincrement,
     problem_id     integer not null,
     num_test_case   integer not null,
     expected_out    blob    not null,
