@@ -15,8 +15,8 @@ func API(sqlitedb *sql.DB) {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /users", createUser)
-	//mux.HandleFunc("POST /users", createContest)
-	//mux.HandleFunc("POST /users", createProblem)
+	mux.HandleFunc("POST /contests", createContest)
+	mux.HandleFunc("POST /problems", createProblem)
 
 	log.Fatal(http.ListenAndServe(":8000", mux))
 }
