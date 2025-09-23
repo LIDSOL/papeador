@@ -2,21 +2,35 @@ package api
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 
 	_ "modernc.org/sqlite"
 )
-var db *sql.DB
+
+type ApiContext struct{
+	DB *sql.DB
+}
 
 func API(sqlitedb *sql.DB) {
-	db = sqlitedb
+	apiCtx := ApiContext{
+		DB: sqlitedb,
+	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /users", createUser)
-	mux.HandleFunc("POST /contests", createContest)
-	mux.HandleFunc("POST /problems", createProblem)
+	mux.HandleFunc("/users", methodHandler("POST", apiCtx.createUser))
+	mux.HandleFunc("/contests", methodHandler("POST", apiCtx.createContest))
+	mux.HandleFunc("/problems", methodHandler("POST", apiCtx.createProblem))
 
 	log.Fatal(http.ListenAndServe(":8000", mux))
+}
+
+func methodHandler(method string, h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != method {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		h(w, r)
+	}
 }
