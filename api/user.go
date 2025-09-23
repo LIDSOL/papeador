@@ -26,7 +26,6 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(in)
