@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"testing"
+
+	"lidsol.org/papeador/store"
 
 	_ "modernc.org/sqlite"
 )
@@ -23,13 +24,13 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 	testDB = db
-	defer os.Remove("test_api.db") // clean up
-
 	// run schema
-	command := exec.Command("bash", "-c", "sqlite3 test_api.db < ../schema.sql")
-	output, err := command.CombinedOutput()
+	schemaBytes, err := os.ReadFile("../schema.sql")
 	if err != nil {
-		log.Fatalf("Failed to run schema: %s, %s", err, string(output))
+		log.Fatalf("Failed to read schema.sql: %v", err)
+	}
+	if _, err := db.Exec(string(schemaBytes)); err != nil {
+		log.Fatalf("Failed to execute schema: %v", err)
 	}
 
 	// Run tests
@@ -37,6 +38,10 @@ func TestMain(m *testing.M) {
 
 	// Teardown: close the database connection
 	testDB.Close()
+	// remove the temporary DB file
+	if err := os.Remove("test_api.db"); err != nil {
+		log.Printf("Warning: failed to remove test DB: %v", err)
+	}
 
 	os.Exit(exitCode)
 }
@@ -45,7 +50,9 @@ func TestMain(m *testing.M) {
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(createUser)
+	// create an ApiContext that uses the test sqlite DB
+	apiCtx := ApiContext{Store: store.NewSQLiteStore(testDB)}
+	handler := http.HandlerFunc(apiCtx.createUser)
 	handler.ServeHTTP(rr, req)
 	return rr
 }
@@ -58,7 +65,7 @@ func checkStatus(t *testing.T, rr *httptest.ResponseRecorder, expectedStatus int
 	}
 }
 
-func createUserRequest(user User) (*http.Request, error) {
+func createUserRequest(user store.User) (*http.Request, error) {
 	jsonUser, _ := json.Marshal(user)
 	return http.NewRequest("POST", "/users", bytes.NewBuffer(jsonUser))
 }
@@ -72,10 +79,9 @@ func clearUserTable() {
 
 func TestCreateUser(t *testing.T) {
 	// Initialize the API with the test database
-	db = testDB
+	// apiCtx is constructed inside executeRequest per-call using testDB
 	clearUserTable()
-
-	newUser := User{
+	newUser := store.User{
 		Username: "testuser",
 		Passhash: "testpass",
 		Email:    "test@example.com",
@@ -90,7 +96,7 @@ func TestCreateUser(t *testing.T) {
 	checkStatus(t, rr, http.StatusCreated)
 
 	// Check the response body
-	var createdUser User
+	var createdUser store.User
 	err = json.NewDecoder(rr.Body).Decode(&createdUser)
 	if err != nil {
 		t.Fatal(err)

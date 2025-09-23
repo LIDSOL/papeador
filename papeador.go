@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"lidsol.org/papeador/api"
+	"lidsol.org/papeador/store"
 	_ "modernc.org/sqlite"
 )
 
@@ -23,5 +24,6 @@ func main() {
 		fmt.Println(string(output))
 		log.Fatal(err)
 	}
-	api.API(db)
+	s := store.NewSQLiteStore(db)
+	api.API(s)
 }
