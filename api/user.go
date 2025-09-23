@@ -46,7 +46,7 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 
 	// Obtener el ID del usuario recién insertado
 	if id, err := res.LastInsertId(); err == nil {
-		new_user.User_ID = int(id)
+		new_user.UserID = int(id)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
