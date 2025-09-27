@@ -1,20 +1,19 @@
 package api
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
-	_ "modernc.org/sqlite"
+	"lidsol.org/papeador/store"
 )
 
 type ApiContext struct{
-	DB *sql.DB
+	Store store.Store
 }
 
-func API(sqlitedb *sql.DB) {
+func API(s store.Store) {
 	apiCtx := ApiContext{
-		DB: sqlitedb,
+		Store: s,
 	}
 
 	mux := http.NewServeMux()
