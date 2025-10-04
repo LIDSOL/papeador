@@ -2,7 +2,10 @@ package main
 
 import (
 	"bufio"
-	// "context"
+	"context"
+	"crypto/rand"
+	"flag"
+
 	"database/sql"
 	"fmt"
 	"log"
@@ -10,12 +13,22 @@ import (
 	"os"
 	"os/exec"
 
-	// "github.com/containers/podman/v5/pkg/bindings"
-	// "github.com/containers/podman/v5/pkg/bindings/containers"
-	// "github.com/containers/podman/v5/pkg/bindings/images"
-	// "github.com/containers/podman/v5/pkg/specgen"
+	buildahDefine "github.com/containers/buildah/define"
+	"github.com/containers/podman/v5/pkg/bindings"
+	"github.com/containers/podman/v5/pkg/bindings/containers"
+	"github.com/containers/podman/v5/pkg/bindings/images"
+	"github.com/containers/podman/v5/pkg/domain/entities/types"
+	"github.com/containers/podman/v5/pkg/specgen"
 	_ "modernc.org/sqlite"
 )
+
+var uri string
+
+func randomString(length int) string {
+	b := make([]byte, length+2)
+	rand.Read(b)
+	return fmt.Sprintf("%x", b)[2:length+2]
+}
 
 func testDB() {
 	db, err := sql.Open("sqlite", "test.db")
@@ -32,40 +45,62 @@ func testDB() {
 	}
 }
 
-func connectToPodman(programString string) string {
+func connectToPodman(connURI string) (context.Context, error) {
 
 	// Crear el contenedor con la multistaged build
 	// Ejecutar el contenedor
 	// Comparar su salida con la esperada
 
-	// Escribir esta cadena a un archivo para cargalo con el Dockerfile
-	path := "./podman/program.go"
-	f, err := os.Create(path);
+	conn, err := bindings.NewConnection(context.Background(), connURI)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+func createSandbox(conn context.Context, programString string) (types.ContainerCreateResponse, error) {
+	sourcePath := "/tmp/papeador-submission.go"
+	f, err := os.Create(sourcePath)
+	if err != nil {
+		return types.ContainerCreateResponse{}, err
 	}
 
 	w := bufio.NewWriter(f)
 	_, err = w.WriteString(programString)
 	if err != nil {
-		panic(err)
+		return types.ContainerCreateResponse{}, err
 	}
 	w.Flush()
 	f.Close()
 
-	command := exec.Command("podman", "build", "-t", "hello", "podman")
-	output, err := command.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(output))
-		log.Fatal(err)
+	options := types.BuildOptions{
+		BuildOptions: buildahDefine.BuildOptions{
+			Output: "program:latest",
+			ConfigureNetwork: buildahDefine.NetworkDisabled,
+
+		},
 	}
 
-
-	command = exec.Command("podman", "run", "hello")
-	output, err = command.CombinedOutput()
+	_, err = images.Build(conn, []string{"./podman/Dockerfile"}, options)
 	if err != nil {
-		fmt.Println(string(output))
-		log.Fatal(err)
+		return types.ContainerCreateResponse{}, err
+	}
+
+	s := specgen.NewSpecGenerator("program:latest", false)
+	s.Name = "submission-sandbox" + randomString(8)
+	createReponse, err := containers.CreateWithSpec(conn, s, nil)
+	if err != nil {
+		return types.ContainerCreateResponse{}, err
+	}
+
+	return createReponse, nil
+}
+
+func runOnSandbox(conn context.Context, createResponse types.ContainerCreateResponse) (string, error) {
+
+	if err := containers.Start(conn, createResponse.ID, nil); err != nil {
+		return "", err
 	}
 
 	// Ejecuta el programa midiendo el tiempo y con timeout
@@ -73,19 +108,19 @@ func connectToPodman(programString string) string {
 	// Comparar las salidas con diff y reportar errores
 	// Reportar el tiempo de ejecución
 
-// #!/bin/sh
+	// #!/bin/sh
 
-// timeout 3s time hello 2>time.output >output
-// # si $? == 143, timeout
-// # si $? != 0, runtime error
+	// timeout 3s time hello 2>time.output >output
+	// # si $? == 143, timeout
+	// # si $? != 0, runtime error
 
-// diff output /tmp/expected-output
-// # si $? == 1, incorrecto
+	// diff output /tmp/expected-output
+	// # si $? == 1, incorrecto
 
-// awk 'NR==1{print $3}' time.output
-// report time
+	// awk 'NR==1{print $3}' time.output
+	// report time
 
-	return string(output)
+	return "submission-sandbox", nil
 }
 
 func submitProgram(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +131,7 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var buf []byte = make([]byte, 5 * 1024)
+	var buf []byte = make([]byte, 5*1024)
 	n, err := file.Read(buf)
 	if err != nil {
 		log.Printf("Could not read file: %v\n", err)
@@ -108,9 +143,16 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(buf))
 	fmt.Println(fileHeader.Size, fileHeader.Filename)
 
-	output := connectToPodman(string(buf)[:n])
+	conn, err := connectToPodman(uri)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	expected := "10\n";
+	createResponse, err := createSandbox(conn, string(buf)[:n])
+	output, err := runOnSandbox(conn, createResponse)
+	log.Println("Container created successfully")
+
+	expected := "10\n"
 	if output == expected {
 		fmt.Println("Respuesta correcta")
 	} else {
@@ -122,8 +164,15 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	uriPtr := flag.String("u", "", "uri for podman connection")
+	var port int
+	flag.IntVar(&port, "p", 8080, "port to listen from")
+	flag.Parse()
+
+	uri = *uriPtr
+	fmt.Println(uri, port)
+
 	mux := http.NewServeMux()
-	port := 8080
 
 	mux.HandleFunc("POST /program", submitProgram)
 	log.Printf("Starting server at :%v\n", port)
