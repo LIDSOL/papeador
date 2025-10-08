@@ -13,7 +13,7 @@ var (
 type User struct {
     UserID  int64  `json:"user_id"`
     Username string `json:"username"`
-    Passhash string `json:"passhash"`
+    Password string `json:"password"`
     Email    string `json:"email"`
 }
 

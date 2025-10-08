@@ -1,8 +1,11 @@
 package store
 
 import (
-    "context"
-    "database/sql"
+	"context"
+	"database/sql"
+	"log"
+
+	"lidsol.org/papeador/security"
 )
 
 type SQLiteStore struct{
@@ -23,7 +26,17 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
         return err
     }
 
-    res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, u.Passhash, u.Email)
+	// Initializing params for Argon2
+	p := &security.Params{
+        Memory:      64 * 1024,
+        Iterations:  3,
+        Parallelism: 2,
+        SaltLength:  16,
+        KeyLength:   32,
+    }
+
+	passhash, err := security.HashPassword(u.Password, p)
+    res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, passhash, u.Email)
     if err != nil {
         return err
     }
