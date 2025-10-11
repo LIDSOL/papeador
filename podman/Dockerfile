@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1
+
+# Build input program
 FROM golang:1.24
 WORKDIR /src
 COPY /tmp/papeador-submission.go ./main.go
@@ -7,6 +9,8 @@ RUN go build -o /bin/submission ./main.go
 
 # Create sandbox
 FROM busybox:latest
+
+# Write file
 COPY <<EOF /bin/papeador
 #!/bin/sh
 
@@ -31,10 +35,13 @@ fi
 
 awk 'NR==1{print $3}' time.output
 EOF
-RUN echo 43 >/tmp/test-input
-RUN echo 43 >/tmp/expected-output
+
+COPY /tmp/papeador-input.txt /tmp/test-input
+COPY /tmp/papeador-output.txt /tmp/expected-output
+
 RUN chmod 600 /tmp/test-input
 RUN chmod 600 /tmp/expected-output
+
 RUN chmod 755 /bin/papeador
 RUN adduser runner << EOF
     correct horse battery staple
