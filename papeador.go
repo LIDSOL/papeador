@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/rand"
 	"flag"
+	"io"
+	"strings"
 
 	"database/sql"
 	"fmt"
@@ -45,12 +47,25 @@ func testDB() {
 	}
 }
 
+func writeStringToFile(path, content string) (error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := bufio.NewWriter(f)
+	_, err = w.WriteString(content)
+	if err != nil {
+		return err
+	}
+
+	w.Flush()
+
+	return nil
+}
+
 func connectToPodman(connURI string) (context.Context, error) {
-
-	// Crear el contenedor con la multistaged build
-	// Ejecutar el contenedor
-	// Comparar su salida con la esperada
-
 	conn, err := bindings.NewConnection(context.Background(), connURI)
 	if err != nil {
 		return nil, err
@@ -59,68 +74,63 @@ func connectToPodman(connURI string) (context.Context, error) {
 	return conn, nil
 }
 
-func createSandbox(conn context.Context, programString string) (types.ContainerCreateResponse, error) {
-	sourcePath := "/tmp/papeador-submission.go"
-	f, err := os.Create(sourcePath)
+func createSandbox(conn context.Context, programStr, testInputStr, expectedOutputStr string) (types.ContainerCreateResponse, *io.PipeReader, error) {
+	programPath := "/tmp/papeador-submission.go"
+	testInputPath := "/tmp/papeador-input.txt"
+	expectedOutputPath := "/tmp/papeador-output.txt"
+
+	err := writeStringToFile(programPath, programStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return types.ContainerCreateResponse{}, nil, err
 	}
 
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(programString)
+	err = writeStringToFile(testInputPath, testInputStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return types.ContainerCreateResponse{}, nil, err
 	}
-	w.Flush()
-	f.Close()
+
+	err = writeStringToFile(expectedOutputPath, expectedOutputStr)
+	if err != nil {
+		return types.ContainerCreateResponse{}, nil, err
+	}
+
+	defer func() {
+		os.Remove(programPath)
+		os.Remove(testInputPath)
+		os.Remove(expectedOutputPath)
+	}()
+
+	r, w := io.Pipe()
 
 	options := types.BuildOptions{
 		BuildOptions: buildahDefine.BuildOptions{
 			Output: "program:latest",
 			ConfigureNetwork: buildahDefine.NetworkDisabled,
-
+			Out: w, // Read stdout later
 		},
 	}
 
 	_, err = images.Build(conn, []string{"./podman/Dockerfile"}, options)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return types.ContainerCreateResponse{}, nil, err
 	}
 
 	s := specgen.NewSpecGenerator("program:latest", false)
 	s.Name = "submission-sandbox" + randomString(8)
 	createReponse, err := containers.CreateWithSpec(conn, s, nil)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return types.ContainerCreateResponse{}, nil, err
 	}
 
-	return createReponse, nil
+	return createReponse, r, nil
 }
 
-func runOnSandbox(conn context.Context, createResponse types.ContainerCreateResponse) (string, error) {
-
+func startSandbox(conn context.Context, createResponse types.ContainerCreateResponse) (error) {
 	if err := containers.Start(conn, createResponse.ID, nil); err != nil {
-		return "", err
+		return err
 	}
 
-	// Ejecuta el programa midiendo el tiempo y con timeout
-	// Si hubo timeout, reportar
-	// Comparar las salidas con diff y reportar errores
-	// Reportar el tiempo de ejecución
-
-	// #!/bin/sh
-
-	// timeout 3s time hello 2>time.output >output
-	// # si $? == 143, timeout
-	// # si $? != 0, runtime error
-
-	// diff output /tmp/expected-output
-	// # si $? == 1, incorrecto
-
-	// awk 'NR==1{print $3}' time.output
-	// report time
-
-	return "submission-sandbox", nil
+	return nil
 }
 
 func submitProgram(w http.ResponseWriter, r *http.Request) {
@@ -148,19 +158,30 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
-	createResponse, err := createSandbox(conn, string(buf)[:n])
-	output, err := runOnSandbox(conn, createResponse)
-	log.Println("Container created successfully")
-
-	expected := "10\n"
-	if output == expected {
-		fmt.Println("Respuesta correcta")
-	} else {
-		fmt.Println("Respuesta incorrecta")
+	createResponse, stdoutPipe, err := createSandbox(conn, string(buf)[:n], "10\n", "10\n")
+	if err != nil {
+		http.Error(w, "Could not create sandbox environment", http.StatusInternalServerError)
+		return
 	}
 
+	err = startSandbox(conn, createResponse)
+	if err != nil {
+		http.Error(w, "Could not start sandbox", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Container created successfully")
+
+	stdoutBuf := new(strings.Builder)
+	_, err = io.Copy(stdoutBuf, stdoutPipe)
+
+	stdoutStr := strings.TrimSpace(stdoutBuf.String())
+
+	resp := fmt.Sprintf("Result: %v\n", stdoutStr)
+
+
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Archivo recibido\n"))
+	w.Write([]byte(resp))
 }
 
 func main() {
