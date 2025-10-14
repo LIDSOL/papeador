@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	// "bufio"
 	"context"
 	"crypto/rand"
 	"flag"
@@ -54,13 +54,13 @@ func writeStringToFile(path, content string) (error) {
 	}
 	defer f.Close()
 
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(content)
+	_, err = f.WriteString(content)
 	if err != nil {
 		return err
 	}
 
-	w.Flush()
+	f.Sync()
+	fmt.Println("Cerrando: ", path)
 
 	return nil
 }
@@ -75,11 +75,16 @@ func connectToPodman(connURI string) (context.Context, error) {
 }
 
 func createSandbox(conn context.Context, programStr, testInputStr, expectedOutputStr string) (types.ContainerCreateResponse, *io.PipeReader, error) {
-	programPath := "/tmp/papeador-submission.go"
-	testInputPath := "/tmp/papeador-input.txt"
-	expectedOutputPath := "/tmp/papeador-output.txt"
+	err := os.Chdir("/vol/podman")
+	if err != nil {
+		return types.ContainerCreateResponse{}, nil, err
+	}
 
-	err := writeStringToFile(programPath, programStr)
+	programPath := "./papeador-submission.go"
+	testInputPath := "./papeador-input.txt"
+	expectedOutputPath := "./papeador-output.txt"
+
+	err = writeStringToFile(programPath, programStr)
 	if err != nil {
 		return types.ContainerCreateResponse{}, nil, err
 	}
@@ -94,27 +99,29 @@ func createSandbox(conn context.Context, programStr, testInputStr, expectedOutpu
 		return types.ContainerCreateResponse{}, nil, err
 	}
 
-	defer func() {
-		os.Remove(programPath)
-		os.Remove(testInputPath)
-		os.Remove(expectedOutputPath)
-	}()
+	log.Println("HOLA?")
 
-	r, w := io.Pipe()
+	// defer func() {
+	// }()
+
+	r, _ := io.Pipe()
 
 	options := types.BuildOptions{
 		BuildOptions: buildahDefine.BuildOptions{
 			Output: "program:latest",
 			ConfigureNetwork: buildahDefine.NetworkDisabled,
-			Out: w, // Read stdout later
+			// Out: w, // Read stdout later
 		},
 	}
 
-	_, err = images.Build(conn, []string{"./podman/Dockerfile"}, options)
+
+	log.Println("Building")
+	_, err = images.Build(conn, []string{"./Dockerfile"}, options)
 	if err != nil {
 		return types.ContainerCreateResponse{}, nil, err
 	}
 
+	log.Println("Creating with spec")
 	s := specgen.NewSpecGenerator("program:latest", false)
 	s.Name = "submission-sandbox" + randomString(8)
 	createReponse, err := containers.CreateWithSpec(conn, s, nil)
@@ -122,6 +129,9 @@ func createSandbox(conn context.Context, programStr, testInputStr, expectedOutpu
 		return types.ContainerCreateResponse{}, nil, err
 	}
 
+	os.Remove(programPath)
+	os.Remove(testInputPath)
+	os.Remove(expectedOutputPath)
 	return createReponse, r, nil
 }
 
@@ -160,7 +170,8 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 
 	createResponse, stdoutPipe, err := createSandbox(conn, string(buf)[:n], "10\n", "10\n")
 	if err != nil {
-		http.Error(w, "Could not create sandbox environment", http.StatusInternalServerError)
+		s := fmt.Sprintf("Could not create sandbox: %v", err)
+		http.Error(w, s, http.StatusInternalServerError)
 		return
 	}
 
