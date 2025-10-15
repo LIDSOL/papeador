@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
-	"log"
+	// "log"
 
 	"lidsol.org/papeador/security"
 )
@@ -37,11 +37,19 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 
 	passhash, err := security.HashPassword(u.Password, p)
 	res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, passhash, u.Email)
+
 	if err != nil {
 		return err
 	}
+
+	token, err := security.GenerateJWT(username)
+	if err != nil {
+		return err
+	}
+
 	if id, ierr := res.LastInsertId(); ierr == nil {
 		u.UserID = id
+		u.JWT = token
 	}
 	return nil
 }
