@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "bufio"
+	"bufio"
 	"context"
 	"crypto/rand"
 	"flag"
@@ -16,11 +16,13 @@ import (
 	"os/exec"
 
 	buildahDefine "github.com/containers/buildah/define"
+	"github.com/containers/podman/v5/pkg/api/handlers"
 	"github.com/containers/podman/v5/pkg/bindings"
 	"github.com/containers/podman/v5/pkg/bindings/containers"
 	"github.com/containers/podman/v5/pkg/bindings/images"
 	"github.com/containers/podman/v5/pkg/domain/entities/types"
 	"github.com/containers/podman/v5/pkg/specgen"
+	dockerContainer "github.com/docker/docker/api/types/container"
 	_ "modernc.org/sqlite"
 )
 
@@ -74,10 +76,10 @@ func connectToPodman(connURI string) (context.Context, error) {
 	return conn, nil
 }
 
-func createSandbox(conn context.Context, programStr, testInputStr, expectedOutputStr string) (types.ContainerCreateResponse, *io.PipeReader, error) {
+func createSandbox(conn context.Context, programStr, testInputStr, expectedOutputStr string) (types.ContainerCreateResponse, error) {
 	err := os.Chdir("/vol/podman")
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
 
 	programPath := "./papeador-submission.go"
@@ -86,31 +88,23 @@ func createSandbox(conn context.Context, programStr, testInputStr, expectedOutpu
 
 	err = writeStringToFile(programPath, programStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
 
 	err = writeStringToFile(testInputPath, testInputStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
 
 	err = writeStringToFile(expectedOutputPath, expectedOutputStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
-
-	log.Println("HOLA?")
-
-	// defer func() {
-	// }()
-
-	r, _ := io.Pipe()
 
 	options := types.BuildOptions{
 		BuildOptions: buildahDefine.BuildOptions{
 			Output: "program:latest",
 			ConfigureNetwork: buildahDefine.NetworkDisabled,
-			// Out: w, // Read stdout later
 		},
 	}
 
@@ -118,25 +112,52 @@ func createSandbox(conn context.Context, programStr, testInputStr, expectedOutpu
 	log.Println("Building")
 	_, err = images.Build(conn, []string{"./Dockerfile"}, options)
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
 
 	log.Println("Creating with spec")
 	s := specgen.NewSpecGenerator("program:latest", false)
+	s.Command = []string{"/bin/sh", "-c", "sleep 5"}
 	s.Name = "submission-sandbox" + randomString(8)
 	createReponse, err := containers.CreateWithSpec(conn, s, nil)
 	if err != nil {
-		return types.ContainerCreateResponse{}, nil, err
+		return types.ContainerCreateResponse{}, err
 	}
 
 	os.Remove(programPath)
 	os.Remove(testInputPath)
 	os.Remove(expectedOutputPath)
-	return createReponse, r, nil
+	return createReponse, nil
 }
 
-func startSandbox(conn context.Context, createResponse types.ContainerCreateResponse) (error) {
-	if err := containers.Start(conn, createResponse.ID, nil); err != nil {
+func startSandbox(conn context.Context, createResponse types.ContainerCreateResponse, w io.Writer) (error) {
+	log.Println(createResponse.ID)
+	if err := containers.Start(conn, createResponse.ID, &containers.StartOptions{}); err != nil {
+		return err
+	}
+	dockerExecOpts := dockerContainer.ExecOptions{
+		Cmd:          []string{"/bin/papeador"},
+		AttachStderr: true,
+		AttachStdout: true,
+		AttachStdin:  false,
+		Tty:          true,
+	}
+	execConfig := &handlers.ExecCreateConfig{dockerExecOpts}
+	execId, err := containers.ExecCreate(conn, createResponse.ID, execConfig)
+	if err != nil {
+		return err
+	}
+	_ = execId
+
+	var stderr io.Writer = os.Stdout
+	input := bufio.NewReader(os.Stdin)
+	_ = input
+
+	attachOptions := new(containers.ExecStartAndAttachOptions)
+	attachOptions.WithAttachError(true).WithAttachInput(false).WithAttachOutput(true).WithErrorStream(stderr).WithOutputStream(w)
+	err = containers.ExecStartAndAttach(conn, execId, attachOptions)
+
+	if err != nil {
 		return err
 	}
 
@@ -168,28 +189,31 @@ func submitProgram(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
-	createResponse, stdoutPipe, err := createSandbox(conn, string(buf)[:n], "10\n", "10\n")
+	createResponse, err := createSandbox(conn, string(buf)[:n], "10\n", "10\n")
 	if err != nil {
 		s := fmt.Sprintf("Could not create sandbox: %v", err)
 		http.Error(w, s, http.StatusInternalServerError)
 		return
 	}
 
-	err = startSandbox(conn, createResponse)
+	stdoutBuf := new(strings.Builder)
+	err = startSandbox(conn, createResponse, stdoutBuf)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Could not start sandbox", http.StatusInternalServerError)
 		return
 	}
 
 	log.Println("Container created successfully")
+	_, err = containers.Wait(conn, createResponse.ID, nil)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not stop sandbox", http.StatusInternalServerError)
+		return
+	}
 
-	stdoutBuf := new(strings.Builder)
-	_, err = io.Copy(stdoutBuf, stdoutPipe)
-
-	stdoutStr := strings.TrimSpace(stdoutBuf.String())
-
-	resp := fmt.Sprintf("Result: %v\n", stdoutStr)
-
+	resp := stdoutBuf.String() + "\n"
+	log.Printf("Resultado: %v", resp)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
