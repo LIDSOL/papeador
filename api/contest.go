@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -22,6 +23,8 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("E: %v\n", in)
+	fmt.Printf("E: %v\n", in.Username)
 	ok, err := security.ValidateJWT(in.JWT, in.Username)
 	if err != nil {
 		log.Println("WHATAADF")

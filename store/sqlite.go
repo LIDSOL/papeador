@@ -17,9 +17,9 @@ func NewSQLiteStore(db *sql.DB) Store {
 }
 
 func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
-	// Verify unique username/email
-	var username string
-	err := s.DB.QueryRowContext(ctx, "SELECT username FROM user WHERE username=? OR email=?", u.Username, u.Email).Scan(&username)
+	// Verify unique duplicateUsername/email
+	var duplicateUsername string
+	err := s.DB.QueryRowContext(ctx, "SELECT username FROM user WHERE username=? OR email=?", u.Username, u.Email).Scan(&duplicateUsername)
 	if err == nil {
 		return ErrAlreadyExists
 	} else if err != sql.ErrNoRows {
@@ -42,7 +42,7 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 		return err
 	}
 
-	token, err := security.GenerateJWT(username)
+	token, err := security.GenerateJWT(u.Username)
 	if err != nil {
 		return err
 	}
