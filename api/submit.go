@@ -11,7 +11,7 @@ import (
 	"github.com/containers/podman/v5/pkg/bindings/containers"
 )
 
-func SubmitProgram(w http.ResponseWriter, r *http.Request) {
+func (api *ApiContext) SubmitProgram(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("program")
 	if err != nil {
 		log.Printf("Could not get form file: %v\n", err)
