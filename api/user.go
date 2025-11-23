@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -16,6 +17,7 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("E: %v\n", in)
 	if err := api.Store.CreateUser(r.Context(), &in); err != nil {
 		if err == store.ErrAlreadyExists {
 			http.Error(w, "El usuario ya está registrado", http.StatusConflict)
