@@ -12,6 +12,7 @@ import (
 	"lidsol.org/papeador/api"
 	"lidsol.org/papeador/judge"
 
+	"lidsol.org/papeador/store"
 	_ "modernc.org/sqlite"
 )
 
@@ -28,6 +29,8 @@ func testDB() {
 		fmt.Println(string(output))
 		log.Fatal(err)
 	}
+	s := store.NewSQLiteStore(db)
+	api.API(s)
 }
 
 func main() {

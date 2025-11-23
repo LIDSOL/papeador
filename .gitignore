@@ -32,3 +32,6 @@ go.work.sum
 .vscode/
 *.~
 
+# Database files
+api/*.db
+
