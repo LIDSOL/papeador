@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"lidsol.org/papeador/security"
 	"lidsol.org/papeador/store"
 )
 
@@ -22,6 +23,18 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 		if err == store.ErrAlreadyExists {
 			http.Error(w, "El usuario ya está registrado", http.StatusConflict)
 			log.Println("El usuario ya está registrado")
+			return
+		} else if err == security.ErrInvalidUsername {
+			http.Error(w, "El nombre de usuario solo puede contener caracteres, número y guiones", http.StatusUnprocessableEntity)
+			log.Println("La nombre de usuario que se intentó registrar es inválido")
+			return
+		} else if err == security.ErrInvalidPassword {
+			http.Error(w, "La contraseña debe contener al menos de 12 a 64 caracteres, una mayúscula, una minúscula, un número y un caracter especial, sin espacios", http.StatusUnprocessableEntity)
+			log.Println("La contraseña que se intentó registrar es insegura")
+			return
+		} else if err == security.ErrInvalidEmail {
+			http.Error(w, "El correo que se intenta registrar es inválido", http.StatusUnprocessableEntity)
+			log.Println("El correo que se intentó registrar es inválido")
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
