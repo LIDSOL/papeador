@@ -12,6 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install C dependencies
+      run: sudo apt install -y libbtrfs-dev liblvm2-dev
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
