@@ -7,6 +7,8 @@ toolchain go1.24.3
 require (
 	github.com/containers/buildah v1.41.3
 	github.com/containers/podman/v5 v5.6.0
+	github.com/cristalhq/jwt/v5 v5.4.0
+	github.com/docker/docker v28.3.2+incompatible
 	modernc.org/sqlite v1.38.2
 )
 
@@ -39,7 +41,6 @@ require (
 	github.com/disiqueira/gotree/v3 v3.0.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v28.3.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
