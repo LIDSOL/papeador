@@ -8,7 +8,7 @@ import (
 	"lidsol.org/papeador/store"
 )
 
-type ApiContext struct{
+type ApiContext struct {
 	Store store.Store
 }
 
@@ -22,6 +22,7 @@ func API(s store.Store, port int) {
 	mux.HandleFunc("/users", methodHandler("POST", apiCtx.createUser))
 	mux.HandleFunc("/contests", methodHandler("POST", apiCtx.createContest))
 	mux.HandleFunc("/problems", methodHandler("POST", apiCtx.createProblem))
+	mux.HandleFunc("/program", methodHandler("POST", apiCtx.SubmitProgram))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), mux))
 }
