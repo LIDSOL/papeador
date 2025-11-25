@@ -1,10 +1,22 @@
 package judge
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"os"
 )
+
+type SubmissionTestCase struct {
+	Input     string
+	Output    string
+}
+
+type Worker struct {
+	Uri       string
+	Ctx       context.Context
+	Available bool
+}
 
 func genRandStr(length int) string {
 	b := make([]byte, length+2)
