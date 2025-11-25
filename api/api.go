@@ -17,20 +17,22 @@ func API(s store.Store) {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/users", methodHandler("POST", apiCtx.createUser))
-	mux.HandleFunc("/contests", methodHandler("POST", apiCtx.createContest))
-	mux.HandleFunc("/problems", methodHandler("POST", apiCtx.createProblem))
-	mux.HandleFunc("/program", methodHandler("POST", apiCtx.SubmitProgram))
+
+	mux.HandleFunc("POST /users", apiCtx.createUser)
+	mux.HandleFunc("GET /users/{id}", apiCtx.getUserByID)
+
+	mux.HandleFunc("POST /contests", apiCtx.createContest)
+	mux.HandleFunc("GET /contests", apiCtx.getContests)
+	mux.HandleFunc("GET /contests/{id}", apiCtx.getContestByID)
+
+	mux.HandleFunc("POST /contests/{id}/problems", apiCtx.createProblem)
+	mux.HandleFunc("GET /contests/{id}/problems", apiCtx.getProblems)
+	mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}", apiCtx.getProblemByID)
+
+	mux.HandleFunc("POST /contests/{constestID}/problems/{problemID}/submit", apiCtx.submitProgram)
+	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit/{submitID}", apiCtx.getSubmissionByID)
+	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit", apiCtx.getSubmissions)
+	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/last-submit", apiCtx.getLastSubmission)
 
 	log.Fatal(http.ListenAndServe(":8000", mux))
-}
-
-func methodHandler(method string, h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != method {
-			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		h(w, r)
-	}
 }

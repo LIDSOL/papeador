@@ -59,6 +59,35 @@ func (api *ApiContext) SubmitProgram(w http.ResponseWriter, r *http.Request) {
 	resp := stdoutBuf.String() + "\n"
 	log.Printf("Resultado: %v", resp)
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))
+}
+
+func (api *ApiContext) getSubmissionByID(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+	submitId := r.PathValue("submitID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v, %v...</h1>", contestId, problemId, submitId)))
+}
+
+func (api *ApiContext) getSubmissions(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v...</h1>", contestId, problemId)))
+}
+
+func (api *ApiContext) getLastSubmission(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v...</h1>", contestId, problemId)))
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -29,4 +30,18 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(in)
+}
+
+func (api *ApiContext) getContests(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("<h1>Not implemented:...</h1>"))
+}
+
+func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v...</h1>", id)))
 }
