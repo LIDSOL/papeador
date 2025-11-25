@@ -14,21 +14,62 @@ func NewSQLiteStore(db *sql.DB) Store {
 }
 
 func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
-	// Verify unique username/email
-	var username string
-	err := s.DB.QueryRowContext(ctx, "SELECT username FROM user WHERE username=? OR email=?", u.Username, u.Email).Scan(&username)
+	// Check for valid username
+	if err:=security.IsValidUsername(u.Username); err != nil {
+		return err
+	}
+
+	// Check for a valid email
+	if email, err := security.ValidateEmail(u.Email); err == nil {
+		u.Email = email // to_lower and trimmed
+	} else {
+		return err
+	}
+
+	// Check for a secure password
+	if err:=security.IsValidPassword(u.Password); err != nil {
+		return err
+	}
+
+	// Verify duplicated Username/email
+	var duplicateUsername string
+	err := s.DB.QueryRowContext(ctx, "SELECT username FROM user WHERE username=? OR email=?", u.Username, u.Email).Scan(&duplicateUsername)
 	if err == nil {
 		return ErrAlreadyExists
 	} else if err != sql.ErrNoRows {
 		return err
 	}
 
-	res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, u.Passhash, u.Email)
+	// Initializing params for Argon2
+	p := &security.Params{
+		Memory:      64 * 1024,
+		Iterations:  3,
+		Parallelism: 2,
+		SaltLength:  16,
+		KeyLength:   32,
+	}
+
+	// Password hashing
+	passhash, err := security.HashPassword(u.Password, p); 
 	if err != nil {
 		return err
 	}
+
+	// Inserting user
+	res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, passhash, u.Email)
+
+	if err != nil {
+		return err
+	}
+
+	token, err := security.GenerateJWT(u.Username)
+	if err != nil {
+		return err
+	}
+
 	if id, ierr := res.LastInsertId(); ierr == nil {
 		u.UserID = id
+		u.JWT = token
 	}
 	return nil
 }
