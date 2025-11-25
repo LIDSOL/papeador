@@ -91,6 +91,17 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	// Metelo de nuevo
 	*judge.WorkerQueueP <- worker
 
+	i := 0
+	for scanner.Scan() {
+		res := scanner.Text()
+		log.Printf("Testcase %v: %v", i, res)
+		resMap[i] = res
+		i++
+	}
+
+	// Metelo de nuevo
+	*judge.WorkerQueueP <- worker
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resMap)
