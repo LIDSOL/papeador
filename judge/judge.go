@@ -3,7 +3,10 @@ package judge
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
+	"strconv"
+	"sync"
 
 	"log"
 	"os"
@@ -19,11 +22,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var podmanConn context.Context
+var podmanConns []*Worker
+var workerQueue = make(chan *Worker, 10)
 
-func GetConn() context.Context {
-	return podmanConn
-}
+var WorkerQueueP = &workerQueue;
+
+var m sync.Mutex
 
 func ConnectToPodman(connURI string) (context.Context, error) {
 	conn, err := bindings.NewConnection(context.Background(), connURI)
@@ -31,35 +35,75 @@ func ConnectToPodman(connURI string) (context.Context, error) {
 		return nil, err
 	}
 
-	podmanConn = conn
+	worker := &Worker{
+		Uri: connURI,
+		Ctx: conn,
+		Available: true,
+	}
+	podmanConns = append(podmanConns, worker)
+
+	workerQueue <- worker
+
+	log.Println("Connection successful")
 
 	return conn, nil
 }
 
-func CreateSandbox(conn context.Context, programStr, testInputStr, expectedOutputStr string) (types.ContainerCreateResponse, error) {
-	err := os.Chdir("/vol/podman")
+func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, timeLimit int) error {
+	m.Lock()
+	defer m.Unlock()
+
+	err := os.MkdirAll("/vol/podman/inputs", 0755)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return err
 	}
 
-	programPath := "./papeador-submission.go"
-	testInputPath := "./papeador-input.txt"
-	expectedOutputPath := "./papeador-output.txt"
+	err = os.MkdirAll("/vol/podman/expected-outputs", 0755)
+	if err != nil {
+		return err
+	}
+
+	err = os.Chdir("/vol/podman")
+	if err != nil {
+		return err
+	}
+
+	programPath := fmt.Sprintf("./papeador-submission.%v", filetype)
+
+	timeLimitPath := "/vol/podman/timelimit.txt"
+	timeLimitString := strconv.Itoa(timeLimit) + "\n"
+	err = writeStringToFile(timeLimitPath, timeLimitString)
+	if err != nil {
+		return err
+	}
 
 	err = writeStringToFile(programPath, programStr)
 	if err != nil {
-		return types.ContainerCreateResponse{}, err
+		return err
 	}
 
-	err = writeStringToFile(testInputPath, testInputStr)
-	if err != nil {
-		return types.ContainerCreateResponse{}, err
+	for k, testcase := range testcases {
+		testInputPath := fmt.Sprintf("./inputs/%02d.txt", k)
+		expectedOutputPath := fmt.Sprintf("./expected-outputs/%02d.txt", k)
+
+
+		err = writeStringToFile(testInputPath, testcase.Input)
+		if err != nil {
+			return err
+		}
+
+		err = writeStringToFile(expectedOutputPath, testcase.Output)
+		if err != nil {
+			return err
+		}
 	}
 
-	err = writeStringToFile(expectedOutputPath, expectedOutputStr)
-	if err != nil {
-		return types.ContainerCreateResponse{}, err
-	}
+	return nil
+}
+
+func CreateSandbox(conn context.Context, filetype, programStr string, testcases []SubmissionTestCase, timeLimit int) (types.ContainerCreateResponse, error) {
+
+	err := CreateFiles(filetype, programStr, testcases, timeLimit)
 
 	options := types.BuildOptions{
 		BuildOptions: buildahDefine.BuildOptions{
@@ -68,24 +112,23 @@ func CreateSandbox(conn context.Context, programStr, testInputStr, expectedOutpu
 		},
 	}
 
-	log.Println("Building")
-	_, err = images.Build(conn, []string{"./Dockerfile"}, options)
+	log.Println("Building image")
+
+	dockerfilePath := fmt.Sprintf("./Dockerfile-%v", filetype)
+	_, err = images.Build(conn, []string{dockerfilePath}, options)
 	if err != nil {
 		return types.ContainerCreateResponse{}, err
 	}
 
 	log.Println("Creating with spec")
 	s := specgen.NewSpecGenerator("program:latest", false)
-	s.Command = []string{"/bin/sh", "-c", "sleep 5"}
+	s.Command = []string{"/bin/alive"}
 	s.Name = "submission-sandbox" + genRandStr(8)
 	createReponse, err := containers.CreateWithSpec(conn, s, nil)
 	if err != nil {
 		return types.ContainerCreateResponse{}, err
 	}
 
-	os.Remove(programPath)
-	os.Remove(testInputPath)
-	os.Remove(expectedOutputPath)
 	return createReponse, nil
 }
 

@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+
+# Build input program
+FROM papeador-java-image:latest
+WORKDIR /src
+COPY ./main.java /src/main.java
+RUN javac main.java
+RUN echo "Main-Class: main" >manifest.txt
+RUN jar cfe main.jar main main.class
+COPY <<EOF /bin/submission
+#!/bin/sh
+exec java -jar /src/main.jar
+EOF
+RUN chmod 755 /bin/submission
+
+# Write file
+COPY ./papeador.sh /bin/papeador
+COPY ./alive.sh /bin/alive
+
+COPY ./timelimit.txt /tmp/timelimit.txt
+COPY ./inputs /tmp/inputs
+COPY ./expected-outputs /tmp/expected-outputs
+
+RUN chmod -R 600 /tmp/timelimit.txt
+RUN chmod -R 600 /tmp/inputs
+RUN chmod -R 600 /tmp/expected-outputs
+
+RUN chmod 755 /bin/papeador
+RUN chmod 755 /bin/alive
+
+RUN adduser runner -D
+
+CMD ["papeador"]

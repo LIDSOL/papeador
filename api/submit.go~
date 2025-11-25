@@ -5,16 +5,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 
 	"lidsol.org/papeador/judge"
 
-	"github.com/containers/podman/v5/pkg/bindings/containers"
+	"github.com/containers/podman/v2/pkg/bindings/containers"
 )
 
-var m sync.Mutex
-
-func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
+func submitProgram(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("program")
 	if err != nil {
 		log.Printf("Could not get form file: %v\n", err)
@@ -34,24 +31,13 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(buf))
 	fmt.Println(fileHeader.Size, fileHeader.Filename)
 
-	m.Lock()
-	worker := <- *judge.WorkerQueueP
-	m.Unlock()
-
-	conn := worker.Ctx
-
-	filenameSep := strings.Split(fileHeader.Filename, ".")
-	filetype := filenameSep[len(filenameSep)-1]
-
-	testcases := []judge.SubmissionTestCase{
-		judge.SubmissionTestCase{Input: "10\n", Output: "20\n"},
-		judge.SubmissionTestCase{Input: "5\n", Output: "10\n"},
-		judge.SubmissionTestCase{Input: "20\n", Output: "40\n"},
-	}
-	timelimit := 2
-	createResponse, err := judge.CreateSandbox(conn, filetype, string(buf)[:n], testcases, timelimit)
+	conn, err := judge.ConnectToPodman(uri)
 	if err != nil {
-		*judge.WorkerQueueP <- worker
+		log.Fatalln(err)
+	}
+
+	createResponse, err := judge.CreateSandbox(conn, string(buf)[:n], "10\n", "10\n")
+	if err != nil {
 		s := fmt.Sprintf("Could not create sandbox: %v", err)
 		http.Error(w, s, http.StatusInternalServerError)
 		return
@@ -60,7 +46,6 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	stdoutBuf := new(strings.Builder)
 	err = judge.StartSandbox(conn, createResponse, stdoutBuf)
 	if err != nil {
-		*judge.WorkerQueueP <- worker
 		log.Println(err)
 		http.Error(w, "Could not start sandbox", http.StatusInternalServerError)
 		return
@@ -69,7 +54,6 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	log.Println("Container created successfully")
 	_, err = containers.Wait(conn, createResponse.ID, nil)
 	if err != nil {
-		*judge.WorkerQueueP <- worker
 		log.Println(err)
 		http.Error(w, "Could not stop sandbox", http.StatusInternalServerError)
 		return
@@ -77,9 +61,6 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 
 	resp := stdoutBuf.String() + "\n"
 	log.Printf("Resultado: %v", resp)
-
-	// Metelo de nuevo
-	*judge.WorkerQueueP <- worker
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp))

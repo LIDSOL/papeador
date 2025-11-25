@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
+	"strings"
 
 	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
 	"os/exec"
 
 	"lidsol.org/papeador/api"
@@ -16,21 +16,21 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func testDB() {
+func testDB(port int) {
 	db, err := sql.Open("sqlite", "test.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	command := exec.Command("bash", "-c", "sqlite3 test.db <schema.sql")
+	command := exec.Command("sh", "-c", "sqlite3 test.db <schema.sql")
 	output, err := command.CombinedOutput()
 	if err != nil {
 		fmt.Println(string(output))
 		log.Fatal(err)
 	}
 	s := store.NewSQLiteStore(db)
-	api.API(s)
+	api.API(s, port)
 }
 
 func main() {
@@ -40,14 +40,13 @@ func main() {
 	flag.Parse()
 
 	uri := *uriPtr
-	_, err := judge.ConnectToPodman(uri)
-	if err != nil {
-		log.Fatalf("Could not connect to Podman: %v", err)
+	for _, u := range(strings.Split(uri, " ")) {
+		log.Println("HOLA?")
+		_, err := judge.ConnectToPodman(u)
+		if err != nil {
+			log.Fatalf("Could not connect to Podman: %v", err)
+		}
 	}
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /program", api.SubmitProgram)
-	log.Printf("Starting server at :%v\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%v", port), mux)
+	testDB(port)
 }
