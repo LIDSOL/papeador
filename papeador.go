@@ -50,22 +50,3 @@ func main() {
 
 	testDB(port)
 }
-
-func main() {
-	uriPtr := flag.String("u", "unix:///run/user/1000/podman/podman.sock", "uri for Podman API service connection")
-	var port int
-	flag.IntVar(&port, "p", 8080, "port to listen from")
-	flag.Parse()
-
-	uri := *uriPtr
-	_, err := judge.ConnectToPodman(uri)
-	if err != nil {
-		log.Fatalf("Could not connect to Podman: %v", err)
-	}
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /program", api.SubmitProgram)
-	log.Printf("Starting server at :%v\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%v", port), mux)
-}
