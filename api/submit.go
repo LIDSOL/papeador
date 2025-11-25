@@ -1,6 +1,8 @@
 package api
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -48,7 +50,7 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 		judge.SubmissionTestCase{Input: "5\n", Output: "10\n"},
 		judge.SubmissionTestCase{Input: "20\n", Output: "40\n"},
 	}
-	timelimit := 2
+	timelimit := 1
 	createResponse, err := judge.CreateSandbox(conn, filetype, string(buf)[:n], testcases, timelimit)
 	if err != nil {
 		*judge.WorkerQueueP <- worker
@@ -75,12 +77,20 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := stdoutBuf.String() + "\n"
-	log.Printf("Resultado: %v", resp)
+	scanner := bufio.NewScanner(strings.NewReader(stdoutBuf.String()))
+	resMap := make(map[int]string)
+
+	i := 0
+	for scanner.Scan() {
+		res := scanner.Text()
+		log.Printf("Testcase %v: %v", i, res)
+		resMap[i] = res
+		i++
+	}
 
 	// Metelo de nuevo
 	*judge.WorkerQueueP <- worker
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(resp))
+	json.NewEncoder(w).Encode(resMap)
 }
