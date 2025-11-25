@@ -40,8 +40,7 @@ func main() {
 	flag.Parse()
 
 	uri := *uriPtr
-	for _, u := range(strings.Split(uri, " ")) {
-		log.Println("HOLA?")
+	for _, u := range strings.Split(uri, " ") {
 		_, err := judge.ConnectToPodman(u)
 		if err != nil {
 			log.Fatalf("Could not connect to Podman: %v", err)
