@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -29,4 +30,21 @@ func (api *ApiContext) createProblem(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(in)
+}
+
+func (api *ApiContext) getProblems(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v...</h1>", id)))
+}
+
+func (api *ApiContext) getProblemByID(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v...</h1>", contestId, problemId)))
 }
