@@ -53,6 +53,7 @@ func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, ti
 	m.Lock()
 	defer m.Unlock()
 
+
 	err := os.MkdirAll("/vol/podman/inputs", 0755)
 	if err != nil {
 		return err
@@ -62,6 +63,15 @@ func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, ti
 	if err != nil {
 		return err
 	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = os.Chdir(cwd)
+	}()
 
 	err = os.Chdir("/vol/podman")
 	if err != nil {
