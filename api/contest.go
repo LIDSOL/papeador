@@ -13,7 +13,7 @@ import (
 type ContestRequestContent struct {
 	store.Contest
 	Username string `json:"username"`
-	JWT string `json:"jwt"`
+	JWT      string `json:"jwt"`
 }
 
 func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
@@ -23,11 +23,8 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("E: %v\n", in)
-	fmt.Printf("E: %v\n", in.Username)
-	ok, err := security.ValidateJWT(in.JWT, in.Username)
+	ok, err := security.ValidateJWT(in.JWT)
 	if err != nil {
-		log.Println("WHATAADF")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -55,9 +52,10 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *ApiContext) getContests(w http.ResponseWriter, r *http.Request) {
+	log.Println("getcontests")
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("<h1>Not implemented:...</h1>"))
+	w.Write([]byte("<h1>getContests: Not implemented:...</h1>"))
 }
 
 func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {

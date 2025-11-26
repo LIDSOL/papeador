@@ -13,13 +13,13 @@ create table if not exists status (
 );
 
 create table if not exists contest (
-    contest_id   integer not null primary key autoincrement,
-    contest_name text    not null unique,
-    start_date 	 date	 not null,
-    end_date   	 date	 not null,
-    organizer	 integer not null,
-    constraint fk_organizador
-        foreign key (organizador_id)
+    contest_id	    	 integer not null primary key autoincrement,
+    contest_name 	 text    not null unique,
+    start_date 	 	 text	 not null,
+    end_date   	 	 text	 not null,
+    organizer_id 	 integer not null,
+    constraint fk_organizer
+        foreign key (organizer_id)
 	references user(user_id)
 );
 

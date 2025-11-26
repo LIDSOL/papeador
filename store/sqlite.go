@@ -3,6 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
+	// "log"
+
+	"lidsol.org/papeador/security"
 )
 
 type SQLiteStore struct {
@@ -74,6 +77,16 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 	return nil
 }
 
+func (s *SQLiteStore) getUserByID(ctx context.Context, id int) (string, error) {
+	username := ""
+	err := s.DB.QueryRowContext(ctx, "SELECT username,  FROM user WHERE id=?", id).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	return username, nil
+}
+
 func (s *SQLiteStore) CreateContest(ctx context.Context, c *Contest) error {
 	var name string
 	err := s.DB.QueryRowContext(ctx, "SELECT contest_name FROM contest WHERE contest_name=?", c.ContestName).Scan(&name)
@@ -83,7 +96,7 @@ func (s *SQLiteStore) CreateContest(ctx context.Context, c *Contest) error {
 		return err
 	}
 
-	res, err := s.DB.ExecContext(ctx, "INSERT INTO contest (contest_name) VALUES (?)", c.ContestName)
+	res, err := s.DB.ExecContext(ctx, "INSERT INTO contest (contest_name) VALUES (?p)", c.ContestName)
 	if err != nil {
 		return err
 	}

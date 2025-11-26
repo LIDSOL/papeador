@@ -21,6 +21,8 @@ type User struct {
 type Contest struct {
 	ContestID   int64  `json:"contest_id"`
 	ContestName string `json:"contest_name"`
+	StartDate   string `json:"start_date"`
+	EndDate     string `json:"end_date"`
 }
 
 type Problem struct {

@@ -35,7 +35,8 @@ func GenerateJWT(username string) (string, error) {
 	return token.String(), nil
 }
 
-func ValidateJWT(tokenStr, username string) (bool, error) {
+// func ValidateJWT(tokenStr, username string) (bool, error) {
+func ValidateJWT(tokenStr string) (bool, error) {
 	verifier, err := jwt.NewVerifierHS(jwt.HS256, secretKey)
 	if err != nil {
 		return false, err
@@ -58,9 +59,9 @@ func ValidateJWT(tokenStr, username string) (bool, error) {
 		return false, err
 	}
 
-	if newClaims.IsSubject(username) {
-		return true, nil
-	}
+	// if newClaims.IsSubject(username) {
+	// 	return true, nil
+	// }
 
 	return false, nil
 }

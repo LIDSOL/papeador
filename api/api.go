@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
@@ -11,14 +13,22 @@ type ApiContext struct {
 	Store store.Store
 }
 
-func API(s store.Store) {
+var templates = template.Must(template.ParseGlob("templates/*.html"))
+
+func API(s store.Store, port int) {
 	apiCtx := ApiContext{
 		Store: s,
 	}
 
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /", apiCtx.getContests)
+
+	mux.HandleFunc("POST /login", apiCtx.createUser)
+	mux.HandleFunc("GET /login", apiCtx.createUser)
+
 	mux.HandleFunc("POST /users", apiCtx.createUser)
+	mux.HandleFunc("GET /users", apiCtx.createUserView)
 	mux.HandleFunc("GET /users/{id}", apiCtx.getUserByID)
 
 	mux.HandleFunc("POST /contests", apiCtx.createContest)
@@ -34,5 +44,5 @@ func API(s store.Store) {
 	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit", apiCtx.getSubmissions)
 	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/last-submit", apiCtx.getLastSubmission)
 
-	log.Fatal(http.ListenAndServe(":8000", mux))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }
