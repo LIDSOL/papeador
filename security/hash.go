@@ -1,7 +1,9 @@
 package security
 
 import (
+	"bytes"
 	"crypto/rand"
+
 	"golang.org/x/crypto/argon2"
 )
 
@@ -11,6 +13,23 @@ type Params struct {
     Parallelism uint8
     SaltLength  uint32
     KeyLength   uint32
+}
+
+var Argon2Params *Params = &Params{
+	Memory:      64 * 1024,
+	Iterations:  3,
+	Parallelism: 2,
+	SaltLength:  16,
+	KeyLength:   32,
+}
+
+func VerifyHash(password string, hash []byte, p *Params) (bool, error) {
+	givenHash, err := HashPassword(password, p)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(givenHash, hash), nil
 }
 
 func HashPassword(password string, p *Params) (hash []byte, err error) {

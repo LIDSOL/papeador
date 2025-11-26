@@ -43,17 +43,9 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 		return err
 	}
 
-	// Initializing params for Argon2
-	p := &security.Params{
-		Memory:      64 * 1024,
-		Iterations:  3,
-		Parallelism: 2,
-		SaltLength:  16,
-		KeyLength:   32,
-	}
 
 	// Password hashing
-	passhash, err := security.HashPassword(u.Password, p); 
+	passhash, err := security.HashPassword(u.Password, security.Argon2Params); 
 	if err != nil {
 		return err
 	}
