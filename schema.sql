@@ -41,6 +41,7 @@ create table if not exists problem (
     problem_id   integer not null primary key autoincrement,
     creator_id	 integer not null,
     problem_name text    not null,
+    base_score	 integer not null,
     description  blob    not null,
     constraint fk_creator
 	foreign key (creator_id)
@@ -62,6 +63,8 @@ create table if not exists submission (
     submission_id   	  integer not null primary key autoincrement,
     user_id    	  	  integer not null,
     status_id  		  integer not null,
+    score		  integer not null,
+    date 	 	  text	 not null,
     problem_id   	  integer not null,
     constraint fk_user
 	foreign key (user_id)
