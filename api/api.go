@@ -44,9 +44,9 @@ func API(s store.Store, port int) {
 	mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}/pdf", apiCtx.getProblemStatementByID)
 
 	mux.HandleFunc("POST /contests/{constestID}/problems/{problemID}/submit", auth.RequireAuth(apiCtx.submitProgram))
-	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit/{submitID}", auth.RequireAuth(apiCtx.getSubmissionByID))
+	// mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit/{submitID}", auth.RequireAuth(apiCtx.getSubmissionByID))
 	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit", auth.RequireAuth(apiCtx.getSubmissions))
-	mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/last-submit", auth.RequireAuth(apiCtx.getLastSubmission))
+	// mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/last-submit", auth.RequireAuth(apiCtx.getLastSubmission))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }
