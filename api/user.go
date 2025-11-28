@@ -39,7 +39,7 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error", err)
 		return
 	}
-	log.Println("SI SE PUDO REGISTRAR")
+
 	http.SetCookie(w, &http.Cookie{
 		Name: "session",
 		Value: in.JWT,
@@ -50,6 +50,7 @@ func (api *ApiContext) createUser(w http.ResponseWriter, r *http.Request) {
 		Value: in.Username,
 		Path: "/",
 	})
+
 	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
 }
