@@ -36,7 +36,8 @@ func API(s store.Store, port int) {
 	mux.HandleFunc("GET /contests", apiCtx.getContests)
 	mux.HandleFunc("GET /contests/{id}", apiCtx.getContestByID)
 
-	mux.HandleFunc("POST /contests/{id}/problems", apiCtx.createProblem)
+	mux.HandleFunc("POST /contests/{id}/problems/new", apiCtx.createProblem)
+	mux.HandleFunc("GET /contests/{id}/problems/new", apiCtx.createProblemView)
 	mux.HandleFunc("GET /contests/{id}/problems", apiCtx.getProblems)
 	mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}", apiCtx.getProblemByID)
 

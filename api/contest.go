@@ -1,13 +1,11 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
-	"lidsol.org/papeador/security"
 	"lidsol.org/papeador/store"
 )
 
@@ -19,10 +17,6 @@ type ContestRequestContent struct {
 
 func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 	var in store.Contest
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 
 	in.ContestName = r.FormValue("contest-name")
 	in.StartDate = r.FormValue("start-date")
@@ -31,11 +25,19 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 	cookieUsername, err := r.Cookie("username")
 	username := cookieUsername.Value
 
+	// We shouldn't ever get here, handle it anyways
+	if err != nil {
+		log.Println("Sin cookie")
+		http.Error(w, "No hay sesión iniciada", http.StatusNotFound)
+		return
+	}
+
 	id, err := api.Store.GetUserID(r.Context(), username)
 
 	// We shouldn't ever get here, handle it anyways
 	if err != nil {
-		http.Error(w, "This user does not exist", http.StatusNotFound)
+		log.Println("Usuario no existe")
+		http.Error(w, "Este usuario no existe", http.StatusNotFound)
 		return
 	}
 
@@ -52,25 +54,26 @@ func (api *ApiContext) createContest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(in)
+	path := fmt.Sprintf("/contests/%v", in.ContestID)
+	w.Header().Set("HX-Redirect", path)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *ApiContext) createContestView(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "createContext.html", nil)
+	templates.ExecuteTemplate(w, "createContest.html", nil)
 }
 
 func (api *ApiContext) getContests(w http.ResponseWriter, r *http.Request) {
 	type contestsInfo struct {
-		contests []store.Contest
+		Contests []store.Contest
 	}
 
 	var info contestsInfo
 	contests, err := api.Store.GetContests(r.Context())
-	info.contests = contests
+	info.Contests = contests
 
 	if err != nil {
+		log.Println("ERROR", err)
 		w.WriteHeader(http.StatusNotFound)
 		templates.ExecuteTemplate(w, "404.html", &info)
 		return
@@ -78,7 +81,7 @@ func (api *ApiContext) getContests(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusCreated)
-	templates.ExecuteTemplate(w, "contest.html", &info)
+	templates.ExecuteTemplate(w, "contests.html", &info)
 }
 
 func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +90,7 @@ func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {
 
 	type contestInfo struct {
 		store.Contest
-		problems []store.Problem
+		Problems []store.Problem
 	}
 
 	c, err := api.Store.GetContestByID(r.Context(), id)
@@ -95,13 +98,15 @@ func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	if err != nil {
+		log.Println("ERRROR", err)
 		w.WriteHeader(http.StatusNotFound)
 		templates.ExecuteTemplate(w, "404.html", &info)
 		return
 	}
 
 	problems, err := api.Store.GetContestProblems(r.Context(), int(info.ContestID))
-	info.problems = problems
+	info.Problems = problems
+	log.Println("info", info)
 
 	w.WriteHeader(http.StatusOK)
 	templates.ExecuteTemplate(w, "contest.html", &info)
