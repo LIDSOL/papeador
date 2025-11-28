@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Agrega un nuevo concurso</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="" />
+    <link rel="icon" href="favicon.png">
+  </head>
+  <body>
+    <h1>Añade un nuevo concurso</h1>
+    <form>
+      <div>
+	Nombre del concurso: <input type="text" class="form-control" name="contest-name">
+      </div>
+
+      <div>
+	Fecha de inicio: <input type="datetime-local" class="form-control" name="start-date">
+      </div>
+
+      <div>
+	Fecha de final: <input type="datetime-local" class="form-control" name="end-date">
+      </div>
+
+      <div class="mt-2">
+	<button class="btn btn-primary" hx-post="/contests/new" hx-target="#responseDiv" hx-target="innerHTML">
+	  Enviar
+	</button>
+      </div>
+
+      <div class="mt-2" id="responseDiv">
+      </div>
+    </form>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  </body>
+</html>

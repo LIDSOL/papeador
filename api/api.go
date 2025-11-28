@@ -31,7 +31,8 @@ func API(s store.Store, port int) {
 	mux.HandleFunc("GET /users", apiCtx.createUserView)
 	mux.HandleFunc("GET /users/{id}", apiCtx.getUserByID)
 
-	mux.HandleFunc("POST /contests", apiCtx.createContest)
+	mux.HandleFunc("POST /contests/new", apiCtx.createContest)
+	mux.HandleFunc("GET /contests/new", apiCtx.createContestView)
 	mux.HandleFunc("GET /contests", apiCtx.getContests)
 	mux.HandleFunc("GET /contests/{id}", apiCtx.getContestByID)
 
