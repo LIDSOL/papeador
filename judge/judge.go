@@ -124,6 +124,20 @@ func CreateSandbox(conn context.Context, filetype, programStr string, testcases 
 
 	log.Println("Building image")
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		return types.ContainerCreateResponse{}, err
+	}
+
+	defer func() {
+		err = os.Chdir(cwd)
+	}()
+
+	err = os.Chdir("/vol/podman")
+	if err != nil {
+		return types.ContainerCreateResponse{}, err
+	}
+
 	dockerfilePath := fmt.Sprintf("./Dockerfile-%v", filetype)
 	_, err = images.Build(conn, []string{dockerfilePath}, options)
 	if err != nil {
