@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"net/http"
 	"os/exec"
 
 	"lidsol.org/papeador/api"
