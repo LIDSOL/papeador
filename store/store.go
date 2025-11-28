@@ -28,12 +28,25 @@ type Contest struct {
 }
 
 type Problem struct {
+	ProblemID      int64  `json:"problem_id"`
+	ContestID      *int64 `json:"contest_id"`
+	CreatorID      int64  `json:"creator_id"`
+	ProblemName    string `json:"problem_name"`
+	BaseScore      string `json:"base_score"`
+	Description    []byte `json:"description"`
+	SampleInput    []byte `json:"sample_input"`
+	SampleOut      []byte `json:"sample_out"`
+	SampleInputStr string `json:"sample_input_str"`
+	SampleOutStr   string `json:"sample_out_str"`
+}
+
+type TestCase struct {
+	TestCaseID  int64  `json:"test_case_id"`
 	ProblemID   int64  `json:"problem_id"`
-	ContestID   *int64 `json:"contest_id"`
-	CreatorID   int64  `json:"creator_id"`
-	ProblemName string `json:"problem_name"`
-	BaseScore   string `json:"problem_name"`
-	Description []byte `json:"description"`
+	NumTestCase int64  `json:"num_test_case"`
+	TimeLimit   int64  `json:"time_limit"`
+	ExpectedOut []byte `json:"expected_out"`
+	GivenInput  []byte `json:"given_input"`
 }
 
 // Store defines persistence operations used by the HTTP layer.
@@ -41,6 +54,7 @@ type Store interface {
 	CreateUser(ctx context.Context, u *User) error
 	CreateContest(ctx context.Context, c *Contest) error
 	CreateProblem(ctx context.Context, p *Problem) error
+	CreateTestCase(ctx context.Context, t *TestCase) error
 	Login(ctx context.Context, u *User) error
 	GetUserByID(ctx context.Context, id int) (string, error)
 	GetUserID(ctx context.Context, username string) (int, error)
@@ -48,4 +62,5 @@ type Store interface {
 	GetContestByName(ctx context.Context, name string) (Contest, error)
 	GetContestByID(ctx context.Context, id int) (Contest, error)
 	GetContestProblems(ctx context.Context, id int) ([]Problem, error)
+	GetProblemByIDs(ctx context.Context, contestID, problemID int) (*Problem, error)
 }

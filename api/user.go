@@ -59,8 +59,7 @@ func (api *ApiContext) createUserView(w http.ResponseWriter, r *http.Request) {
 	type prueba struct {
 		Title string
 	}
-	a := prueba{Title: "TITULO"}
-	log.Println("HOLA A TODOS")
+	a := prueba{Title: ""}
 	templates.ExecuteTemplate(w, "createUser.html", &a)
 }
 
