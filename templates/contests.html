@@ -109,7 +109,7 @@
             <td>{{ .OrganizerName }}</td>
             <td>{{ .StartDate }}</td>
             <td>{{ .EndDate }}</td>
-            <td><button class="btn-join" onclick="unirse('Codeforce')">Unirse</button></td>
+            <td><a href="/contests/{{.ContestID}}"><button class="btn-join">Ver</button></a></td>
         </tr>
       {{ end }}
     </table>
