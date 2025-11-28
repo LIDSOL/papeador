@@ -8,7 +8,13 @@ import (
 
 func IsAuthenticated(r *http.Request) bool {
 	cookieJWT, err := r.Cookie("jwt")
+	if err != nil {
+		return false
+	}
 	cookieUsername, err := r.Cookie("username")
+	if err != nil {
+		return false
+	}
 
 	ok, err := security.ValidateJWT(cookieJWT.Value, cookieUsername.Value)
 	if err != nil {
@@ -24,7 +30,8 @@ func IsAuthenticated(r *http.Request) bool {
 func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !IsAuthenticated(r) {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			w.Header().Set("HX-Redirect", "/login")
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		next(w, r)

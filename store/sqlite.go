@@ -44,13 +44,13 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 	}
 
 	// Password hashing
-	passhash, err := security.HashPassword(u.Password, security.Argon2Params)
+	passhash, passsalt, err := security.HashPassword(u.Password, security.Argon2Params)
 	if err != nil {
 		return err
 	}
 
 	// Inserting user
-	res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,email) VALUES (?, ?, ?)", u.Username, passhash, u.Email)
+	res, err := s.DB.ExecContext(ctx, "INSERT INTO user (username,passhash,passsalt,email) VALUES (?, ?, ?, ?)", u.Username, passhash, passsalt, u.Email)
 
 	if err != nil {
 		return err
@@ -252,9 +252,9 @@ func (s *SQLiteStore) CreateTestCase(ctx context.Context, t *TestCase) error {
 }
 
 func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
-	var username, password string
+	var username, storedHash, salt string
 
-	err := s.DB.QueryRowContext(ctx, "SELECT username, password FROM user WHERE username = ? OR email = ?", u.Username, u.Email).Scan(&username, &password)
+	err := s.DB.QueryRowContext(ctx, "SELECT username, passhash, passsalt FROM user WHERE username = ? OR email = ?", u.Username, u.Email).Scan(&username, &storedHash, &salt)
 	if err == sql.ErrNoRows {
 		return ErrNotFound
 	}
@@ -262,13 +262,14 @@ func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 		return err
 	}
 	//Verificar password
-	hash := []byte(u.Password)
+	inputPass := []byte(u.Password)
 
-	val, err := security.VerifyHash(password,hash, security.Argon2Params)
+	val, err := security.VerifyHash(inputPass, []byte(storedHash), []byte(salt), security.Argon2Params)
 	if err != nil {
 		return err
 	}
 	if !val {
+		log.Println("ERR", err)
 		return security.ErrInvalidCredentials
 	}	
 

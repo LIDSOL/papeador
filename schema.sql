@@ -4,6 +4,7 @@ create table if not exists user (
     user_id   	 integer not null primary key autoincrement,
     username	 text    not null unique,
     passhash	 text    not null,
+    passsalt	 text    not null,
     email	 text    not null unique
 );
 

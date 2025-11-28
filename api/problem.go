@@ -188,9 +188,17 @@ func (api *ApiContext) getProblemByID(w http.ResponseWriter, r *http.Request) {
 	type pageInfo struct {
 		store.Problem
 		ContestID int
+		Username string
 	}
 
 	info := pageInfo{Problem: *problem, ContestID: contestID}
+
+
+	cookieUsername, err := r.Cookie("username")
+	if err == nil {
+		username := cookieUsername.Value
+		info.Username = username
+	}
 
 	templates.ExecuteTemplate(w, "problem.html", &info)
 }

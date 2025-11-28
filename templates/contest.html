@@ -28,7 +28,11 @@
                 <a class="nav-link" href="#">Perfil</a>
                 </li>
                 <li class="nav-item">
-                <a class="nav-link" href="./login.html">Login</a>
+		  {{ if .Username }}
+		    <a class="nav-link" hx-get="/logout">Logout</a>
+		  {{ else }}
+		    <a class="nav-link" href="/login">Login</a>
+		  {{ end }}
                 </li>
             </ul>
             </div>

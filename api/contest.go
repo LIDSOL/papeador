@@ -66,11 +66,18 @@ func (api *ApiContext) createContestView(w http.ResponseWriter, r *http.Request)
 func (api *ApiContext) getContests(w http.ResponseWriter, r *http.Request) {
 	type contestsInfo struct {
 		Contests []store.Contest
+		Username string
 	}
 
 	var info contestsInfo
 	contests, err := api.Store.GetContests(r.Context())
 	info.Contests = contests
+
+	cookieUsername, err := r.Cookie("username")
+	if err == nil {
+		username := cookieUsername.Value
+		info.Username = username
+	}
 
 	if err != nil {
 		log.Println("ERROR", err)
@@ -91,10 +98,17 @@ func (api *ApiContext) getContestByID(w http.ResponseWriter, r *http.Request) {
 	type contestInfo struct {
 		store.Contest
 		Problems []store.Problem
+		Username string
 	}
 
 	c, err := api.Store.GetContestByID(r.Context(), id)
 	info := contestInfo{Contest: c}
+
+	cookieUsername, err := r.Cookie("username")
+	if err == nil {
+		username := cookieUsername.Value
+		info.Username = username
+	}
 
 	w.Header().Set("Content-Type", "text/html")
 	if err != nil {

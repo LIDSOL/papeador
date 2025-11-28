@@ -1,8 +1,8 @@
 package security
 
 import (
-	"bytes"
 	"crypto/rand"
+	"log"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -23,36 +23,46 @@ var Argon2Params *Params = &Params{
 	KeyLength:   32,
 }
 
-func VerifyHash(password string, hash []byte, p *Params) (bool, error) {
-	givenHash, err := HashPassword(password, p)
+func VerifyHash(password, storedHash, salt []byte, p *Params) (bool, error) {
+	log.Println("HOLA")
+	otherHash, err := HashPasswordWithSalt(string(password), salt, p)
 	if err != nil {
 		return false, err
 	}
 
-	return bytes.Equal(givenHash, hash), nil
+	return string(otherHash) == string(storedHash), nil
 }
 
-func HashPassword(password string, p *Params) (hash []byte, err error) {
-    // Generate a cryptographically secure random salt.
-    salt, err := generateSalt(p.SaltLength)
-    if err != nil {
-        return nil, err
-    }
+func HashPasswordWithSalt(password string, salt []byte, p *Params) (hash []byte, err error) {
+	// Pass the plaintext password, salt and parameters to the argon2.IDKey
+	// function. This will generate a hash of the password using the Argon2id
+	// variant.
+	hash = argon2.IDKey([]byte(password), salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
 
-    // Pass the plaintext password, salt and parameters to the argon2.IDKey
-    // function. This will generate a hash of the password using the Argon2id
-    // variant.
-    hash = argon2.IDKey([]byte(password), salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+	return hash, nil
+}
 
-    return hash, nil
+func HashPassword(password string, p *Params) (hash, salt []byte, err error) {
+	// Generate a cryptographically secure random salt.
+	salt, err = generateSalt(p.SaltLength)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Pass the plaintext password, salt and parameters to the argon2.IDKey
+	// function. This will generate a hash of the password using the Argon2id
+	// variant.
+	hash = argon2.IDKey([]byte(password), salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+
+	return hash, salt, nil
 }
 
 func generateSalt( n uint32) ([]byte, error) {
 	b := make([]byte, n)
-    _, err := rand.Read(b)
-    if err != nil {
-        return nil, err
-    }
+	_, err := rand.Read(b)
+	if err != nil {
+		return nil, err
+	}
 
-    return b, nil
+	return b, nil
 }
