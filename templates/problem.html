@@ -3,22 +3,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>{{ .ContestName }}</title>
+    <title>{{ .ProblemName }}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="description" content="" />
     <link rel="icon" href="favicon.png">
   </head>
   <body>
-    <h1>{{ .ContestName }}</h1>
-    <h2>{{ .StartDate }}</h2>
-    <h2>{{ .EndDate }}</h2>
-    <h2>{{ .OrganizerName }}</h2>
-    <h2>{{ .ContestID }}</h2>
+    <h1>{{ .ProblemName }}</h1>
+    </hr>
+    <h2>{{ .SampleInputStr }}</h2>
+    <h2>{{ .SampleOutStr }}</h2>
 
-    {{ range .Problems}}
-	<h3>{{ .ProblemName }}</h3>
-    {{ end }}
-    </form>
+    <object class="pdf" 
+	    data=
+	    "/contests/{{.ContestID}}/problems/{{.ProblemID}}/pdf"
+	    width="800"
+	    height="500">
+    </object>
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
   </body>
 </html>

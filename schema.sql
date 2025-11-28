@@ -52,6 +52,7 @@ create table if not exists test_case (
     test_case_id   integer not null primary key autoincrement,
     problem_id     integer not null,
     num_test_case   integer not null,
+    time_limit      integer not null,
     expected_out    blob    not null,
     given_input	    blob    not null,
     constraint fk_problem

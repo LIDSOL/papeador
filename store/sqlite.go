@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
-	// "log"
+	"log"
 
 	"lidsol.org/papeador/security"
 )
@@ -61,6 +61,7 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 		return err
 	}
 
+
 	if id, ierr := res.LastInsertId(); ierr == nil {
 		u.UserID = id
 		u.JWT = token
@@ -80,8 +81,9 @@ func (s *SQLiteStore) GetUserByID(ctx context.Context, id int) (string, error) {
 
 func (s *SQLiteStore) GetUserID(ctx context.Context, username string) (int, error) {
 	id := 0
-	err := s.DB.QueryRowContext(ctx, "SELECT id,  FROM user WHERE username=?", username).Scan(&id)
+	err := s.DB.QueryRowContext(ctx, "SELECT user_id  FROM user WHERE username=?", username).Scan(&id)
 	if err != nil {
+		log.Println("ERR", err)
 		return -1, err
 	}
 
@@ -108,9 +110,9 @@ func (s *SQLiteStore) CreateContest(ctx context.Context, c *Contest) error {
 }
 
 func (s *SQLiteStore) GetContests(ctx context.Context) ([]Contest, error) {
-	rows, err := s.DB.Query("SELECT c.contest_id, c.contest_name, c.start_date, c.end_date, u.username from contest JOIN user ON c.organizer_id = u.user_id")
+	rows, err := s.DB.QueryContext(ctx, "SELECT c.contest_id, c.contest_name, c.start_date, c.end_date, u.username FROM contest c JOIN user u ON c.organizer_id = u.user_id")
 
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	}
 	defer rows.Close()
@@ -119,15 +121,15 @@ func (s *SQLiteStore) GetContests(ctx context.Context) ([]Contest, error) {
 
 	for rows.Next() {
 		var c Contest
-		if err := rows.Scan(c.ContestID, c.ContestName, c.StartDate, c.EndDate, c.OrganizerName); err != nil {
+		if err := rows.Scan(&c.ContestID, &c.ContestName, &c.StartDate, &c.EndDate, &c.OrganizerName); err != nil {
 			return contests, err
 		}
 		contests = append(contests, c)
 	}
 
-	if err := rows.Err(); err != nil {
-		return contests, err
-	}
+	// if err := rows.Err(); err != nil {
+	// 	return contests, nil
+	// }
 
 	return contests, nil
 }
@@ -144,7 +146,7 @@ func (s *SQLiteStore) GetContestByName(ctx context.Context, name string) (Contes
 
 func (s *SQLiteStore) GetContestByID(ctx context.Context, id int) (Contest, error) {
 	var c Contest
-	err := s.DB.QueryRowContext(ctx, "SELECT c.contest_id, c.contest_name, c.start_date, c.end_date, c.organizer_id, u.organzer_name FROM contest JOIN user ON c.organizer_id = u.user_id WHERE c.contest_id=?", id).Scan(&c.ContestID, &c.ContestName, &c.StartDate, &c.EndDate, &c.OrganizerID, &c.OrganizerName)
+	err := s.DB.QueryRowContext(ctx, "SELECT c.contest_id, c.contest_name, c.start_date, c.end_date, c.organizer_id, u.username FROM contest c JOIN user u ON c.organizer_id = u.user_id WHERE c.contest_id=?", id).Scan(&c.ContestID, &c.ContestName, &c.StartDate, &c.EndDate, &c.OrganizerID, &c.OrganizerName)
 	if err != nil {
 		return Contest{}, err
 	}
@@ -153,7 +155,7 @@ func (s *SQLiteStore) GetContestByID(ctx context.Context, id int) (Contest, erro
 }
 
 func (s *SQLiteStore) GetContestProblems(ctx context.Context, id int) ([]Problem, error) {
-	rows, err := s.DB.Query("SELECT problem_id, contest_id, problem_name from problem WHERE contest_id = ?", id)
+	rows, err := s.DB.Query("SELECT p.problem_id, c.contest_id, p.problem_name from problem p JOIN contest_has_problem c ON p.problem_id = c.problem_id WHERE c.contest_id = ?", id)
 
 	if err != nil {
 		return nil, err
@@ -164,7 +166,7 @@ func (s *SQLiteStore) GetContestProblems(ctx context.Context, id int) ([]Problem
 
 	for rows.Next() {
 		var p Problem
-		if err := rows.Scan(p.ProblemID, p.ContestID, p.ProblemName); err != nil {
+		if err := rows.Scan(&p.ProblemID, &p.ContestID, &p.ProblemName); err != nil {
 			return problems, err
 		}
 		problems = append(problems, p)
@@ -188,12 +190,63 @@ func (s *SQLiteStore) CreateProblem(ctx context.Context, p *Problem) error {
 		}
 	}
 
-	res, err := s.DB.ExecContext(ctx, "INSERT INTO problem (contest_id, creator_id, problem_name, description) VALUES (?, ?, ?, ?)", p.ContestID, p.CreatorID, p.ProblemName, p.Description)
+	res, err := s.DB.ExecContext(ctx, "INSERT INTO problem (creator_id, problem_name, base_score, description) VALUES (?, ?, ?, ?)", p.CreatorID, p.ProblemName, p.BaseScore, p.Description)
+
 	if err != nil {
 		return err
 	}
+
 	if id, ierr := res.LastInsertId(); ierr == nil {
 		p.ProblemID = id
+
+		_, err := s.DB.ExecContext(ctx, "INSERT INTO contest_has_problem (contest_id, problem_id, score) VALUES (?, ?, 0)", p.ContestID, p.ProblemID)
+
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (s *SQLiteStore) GetProblemByIDs(ctx context.Context, contestID, problemID int) (*Problem, error) {
+	p := Problem{}
+	err := s.DB.QueryRowContext(ctx, "SELECT p.problem_id, p.problem_name, p.description from problem p JOIN contest_has_problem c ON p.problem_id = c.problem_id WHERE c.contest_id = ? AND p.problem_id = ?", contestID, problemID).Scan(&p.ProblemID, &p.ProblemName, &p.Description)
+
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	log.Println("HOLA")
+
+	err = s.DB.QueryRowContext(ctx, "SELECT t.expected_out, t.given_input from test_case t JOIN problem p ON p.problem_id = t.problem_id WHERE t.problem_id = ? ORDER BY t.num_test_case ASC LIMIT 1", p.ProblemID).Scan(&p.SampleOut, &p.SampleInput)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
+}
+
+func (s *SQLiteStore) CreateTestCase(ctx context.Context, t *TestCase) error {
+	var pid int64
+	err := s.DB.QueryRowContext(ctx, "SELECT problem_id FROM problem WHERE problem_id=?", *&t.ProblemID).Scan(&pid)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+
+	res, err := s.DB.ExecContext(ctx, "INSERT INTO test_case (problem_id, num_test_case, time_limit, expected_out, given_input) VALUES (?, ?, ?, ?, ?)", t.ProblemID, t.NumTestCase, t.TimeLimit, t.ExpectedOut, t.GivenInput)
+
+	if err != nil {
+		return err
+	}
+
+	if id, ierr := res.LastInsertId(); ierr == nil {
+		t.TestCaseID = id
 	}
 	return nil
 }
