@@ -1,20 +1,208 @@
 <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papeador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<style>
+    .backg {
+        background-color:  #0a2463 !important; /* azul oscuro */
+    }
+</style>
+<body>
+    <nav class="navbar navbar-expand-lg backg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Papeador</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="./contests.html">Concursos</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="#">Perfil</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="./login.html">Login</a>
+                </li>
+            </ul>
+            </div>
+        </div>
+    </nav>
 
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>{{ .ContestName }}</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="description" content="" />
-    <link rel="icon" href="favicon.png">
-  </head>
-  <body>
-    <h1>{{ .ContestName }}</h1>
-    <h2>{{ .StartDate }}</h2>
-    <h2>{{ .EndDate }}</h2>
-    <h2>{{ .OrganizerName }}</h2>
-    <h2>{{ .ContestID }}</h2>
-    </form>
+    <div class="container mt-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h2 class="card-title mb-2">{{.ContestName}}</h2>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-person-circle"></i> Organizado por: <strong>{{ .OrganizerName }}</strong>
+                        </p>
+                    </div>
+                    <span class="badge bg-success fs-6">En progreso</span>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <i class="bi bi-calendar-check text-primary"></i>
+                            <strong>Inicio:</strong> {{ .StartDate }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <i class="bi bi-calendar-x text-danger"></i>
+                            <strong>Fin:</strong> {{ .EndDate }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Problemas -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header backg text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-list-task"></i> Problemas
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">A</span>
+                                    Two Sum
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">B</span>
+                                    Binary Search
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">C</span>
+                                    Segment Tree
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">D</span>
+                                    Alice and Bob
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">E</span>
+                                    Counting strings
+                                </div>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-secondary me-2">F</span>
+                                    MEX
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ranking -->
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header backg text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-trophy-fill"></i> Ranking
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="text-center">#</th>
+                                        <th scope="col">Participante</th>
+                                        <th scope="col" class="text-end">Puntaje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="table-warning">
+                                        <td class="text-center">
+                                            <i class="bi bi-trophy-fill text-warning fs-5"></i>
+                                        </td>
+                                        <td>carlos_dev</td>
+                                        <td class="text-end">1850</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">
+                                            <i class="bi bi-trophy-fill text-secondary fs-6"></i>
+                                        </td>
+                                        <td>maria_codes</td>
+                                        <td class="text-end">1720</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">
+                                            <i class="bi bi-trophy-fill" style="color: #CD7F32;"></i>
+                                        </td>
+                                        <td>juan_prog</td>
+                                        <td class="text-end">1650</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">4</td>
+                                        <td>ana_algorithm</td>
+                                        <td class="text-end">1500</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">5</td>
+                                        <td>pedro_coder</td>
+                                        <td class="text-end">1420</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">6</td>
+                                        <td>lucia_tech</td>
+                                        <td class="text-end">1350</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">7</td>
+                                        <td>diego_solver</td>
+                                        <td class="text-end">1200</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">8</td>
+                                        <td>sofia_dev</td>
+                                        <td class="text-end">1100</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">9</td>
+                                        <td>miguel_codes</td>
+                                        <td class="text-end">950</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center">10</td>
+                                        <td>elena_prog</td>
+                                        <td class="text-end">800</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
-  </body>
+
+</body>
 </html>
