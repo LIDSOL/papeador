@@ -18,6 +18,7 @@ var (
 	ErrInvalidUsername 	= errors.New("invalid username")
 	ErrInvalidPassword 	= errors.New("invalid password")
 	ErrInvalidEmail 	= errors.New("invalid email")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 func IsValidUsername(username string) error {
