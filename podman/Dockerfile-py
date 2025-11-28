@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1
+
+# Build input program
+FROM papeador-python-image:latest
+WORKDIR /src
+COPY ./papeador-submission.py /bin/submission.py
+
+# Write file
+COPY ./papeador.sh /bin/papeador
+COPY ./alive.sh /bin/alive
+
+COPY ./timelimit.txt /tmp/timelimit.txt
+COPY ./inputs /tmp/inputs
+COPY ./expected-outputs /tmp/expected-outputs
+
+RUN chmod -R 600 /tmp/timelimit.txt
+RUN chmod -R 600 /tmp/inputs
+RUN chmod -R 600 /tmp/expected-outputs
+
+RUN chmod 755 /bin/papeador
+RUN chmod 755 /bin/alive
+
+RUN alias time='busybox time'
+
+COPY <<EOF /bin/submission
+#!/bin/sh
+pypy3 /bin/submission.py
+EOF
+
+RUN useradd runner
+
+RUN chmod 755 /bin/submission
+
+CMD ["papeador"]

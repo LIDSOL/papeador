@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+# Build input program
+FROM gcc:4.9
+WORKDIR /src
+COPY ./papeador-submission.cpp ./main.cpp
+RUN g++ -static -o /bin/submission /src/main.cpp
+
+
+
+# Create sandbox
+FROM busybox:latest
+
+# Write file
+COPY ./papeador.sh /bin/papeador
+COPY ./alive.sh /bin/alive
+
+COPY ./timelimit.txt /tmp/timelimit.txt
+COPY ./inputs /tmp/inputs
+COPY ./expected-outputs /tmp/expected-outputs
+
+RUN chmod -R 600 /tmp/timelimit.txt
+RUN chmod -R 600 /tmp/inputs
+RUN chmod -R 600 /tmp/expected-outputs
+
+RUN chmod 755 /bin/papeador
+RUN chmod 755 /bin/alive
+
+RUN adduser runner -D
+COPY --from=0 /bin/submission /bin/submission
+CMD ["papeador"]

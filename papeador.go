@@ -23,7 +23,7 @@ func testDB(port int) {
 	}
 	defer db.Close()
 
-	command := exec.Command("bash", "-c", "sqlite3 test.db <schema.sql")
+	command := exec.Command("sh", "-c", "sqlite3 test.db <schema.sql")
 	output, err := command.CombinedOutput()
 	if err != nil {
 		fmt.Println(string(output))
@@ -43,7 +43,7 @@ func main() {
 	for _, u := range strings.Split(uri, " ") {
 		_, err := judge.ConnectToPodman(u)
 		if err != nil {
-			// log.Fatalf("Could not connect to Podman: %v", err)
+			log.Fatalf("Could not connect to Podman: %v", err)
 		}
 	}
 
