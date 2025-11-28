@@ -118,3 +118,30 @@ func (s *SQLiteStore) CreateProblem(ctx context.Context, p *Problem) error {
 	}
 	return nil
 }
+
+func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
+	var username, password string
+
+	err := s.DB.QueryRowContext(ctx, "SELECT username, password FROM user WHERE username = ? OR email = ?", u.Username, u.Email).Scan(&username, &password)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	//Verificar password
+	hash := []byte(u.Password)
+
+	val, err := security.VerifyHash(password,hash, security.Argon2Params)
+	if err != nil {
+		return err
+	}
+	if !val {
+		return security.ErrInvalidCredentials
+	}	
+
+	return nil
+	
+}
+
+

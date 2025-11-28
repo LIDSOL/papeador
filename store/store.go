@@ -38,4 +38,5 @@ type Store interface {
 	CreateUser(ctx context.Context, u *User) error
 	CreateContest(ctx context.Context, c *Contest) error
 	CreateProblem(ctx context.Context, p *Problem) error
+	Login(ctx context.Context, u *User) error
 }
