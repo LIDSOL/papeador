@@ -1,0 +1,136 @@
+package api
+
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+
+	"lidsol.org/papeador/judge"
+
+	"github.com/containers/podman/v5/pkg/bindings/containers"
+)
+
+var m sync.Mutex
+
+func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("HOLA A TODOS")
+	err := r.ParseMultipartForm(8 << 20)
+	if err != nil {
+		http.Error(w, "Los archivos deben ser, como máximo, de 8 MiB", http.StatusBadRequest)
+		log.Println("Error", err)
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("program")
+	if err != nil {
+		log.Printf("Could not get form file: %v\n", err)
+		http.Error(w, "Could not get form file", http.StatusBadRequest)
+		return
+	}
+
+	var buf []byte = make([]byte, 5*1024)
+	n, err := file.Read(buf)
+	if err != nil {
+		log.Printf("Could not read file: %v\n", err)
+		http.Error(w, "Could not read file", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println(n)
+	fmt.Println(string(buf))
+	fmt.Println(fileHeader.Size, fileHeader.Filename)
+
+	m.Lock()
+	worker := <- *judge.WorkerQueueP
+	m.Unlock()
+
+	conn := worker.Ctx
+
+	filenameSep := strings.Split(fileHeader.Filename, ".")
+	filetype := filenameSep[len(filenameSep)-1]
+
+
+	// testcases, err := api.Store.GetTestCases(r.Context(), problemID)
+	testcases := []judge.SubmissionTestCase{
+		judge.SubmissionTestCase{Input: "4\n", Output: "24\n"},
+		judge.SubmissionTestCase{Input: "5\n", Output: "120\n"},
+		judge.SubmissionTestCase{Input: "13\n", Output: "6227020800\n"},
+	}
+	timelimit := 1
+	createResponse, err := judge.CreateSandbox(conn, filetype, string(buf)[:n], testcases, timelimit)
+	if err != nil {
+		*judge.WorkerQueueP <- worker
+		s := fmt.Sprintf("Could not create sandbox: %v", err)
+		http.Error(w, s, http.StatusInternalServerError)
+		return
+	}
+
+	stdoutBuf := new(strings.Builder)
+	err = judge.StartSandbox(conn, createResponse, stdoutBuf)
+	if err != nil {
+		*judge.WorkerQueueP <- worker
+		log.Println(err)
+		http.Error(w, "Could not start sandbox", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Container created successfully")
+	_, err = containers.Wait(conn, createResponse.ID, nil)
+	if err != nil {
+		*judge.WorkerQueueP <- worker
+		log.Println(err)
+		http.Error(w, "Could not stop sandbox", http.StatusInternalServerError)
+		return
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(stdoutBuf.String()))
+	resMap := make(map[int]string)
+
+	i := 0
+	for scanner.Scan() {
+		res := scanner.Text()
+		log.Printf("Testcase %v: %v", i, res)
+		resMap[i] = res
+		i++
+	}
+
+	// Metelo de nuevo
+	*judge.WorkerQueueP <- worker
+
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(resMap)
+}
+
+func (api *ApiContext) getSubmissionByID(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+	submitId := r.PathValue("submitID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v, %v...</h1>", contestId, problemId, submitId)))
+}
+
+func (api *ApiContext) getSubmissions(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v...</h1>", contestId, problemId)))
+}
+
+func (api *ApiContext) getLastSubmission(w http.ResponseWriter, r *http.Request) {
+	contestId := r.PathValue("contestID")
+	problemId := r.PathValue("problemID")
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(fmt.Sprintf("<h1>Not implemented: %v, %v...</h1>", contestId, problemId)))
+}

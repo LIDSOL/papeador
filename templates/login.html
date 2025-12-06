@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Papeador</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<style>
+    .backg {
+        background-color:  #0a2463 !important; /* azul oscuro */
+    }
+     body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+    }
+
+</style>
+<body>
+    <nav class="navbar navbar-expand-lg backg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Papeador</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="./listado_concursos.html">Concursos</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="#">Perfil</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="#">Login</a>
+                </li>
+            </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab" aria-controls="login" aria-selected="true">Iniciar Sesión</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab" aria-controls="register" aria-selected="false">Registrarse</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                    <!-- Formulario de Login -->
+                    <div class="tab-pane fade show active" id="login" role="tabpanel" aria-labelledby="login-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title text-center mb-4">Iniciar Sesión</h3>
+                                <form hx-post="/users/login" hx-target="#login-response">
+                                    <div class="mb-3">
+                                        <label for="loginUsername" class="form-label">Usuario</label>
+                                        <input type="text" class="form-control" id="loginUsername" name="username" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="loginPassword" class="form-label">Contraseña</label>
+                                        <input type="password" class="form-control" id="loginPassword" name="password" required>
+                                    </div>
+                                    <!-- <div class="mb-3 form-check"> -->
+                                    <!--     <input type="checkbox" class="form-check-input" id="rememberMe"> -->
+                                    <!--     <label class="form-check-label" for="rememberMe">Recordarme</label> -->
+                                    <!-- </div> -->
+                                    <input type="submit" class="btn btn-primary w-100" value="Entrar">
+                                </form>
+				<div id="login-response"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Registro -->
+                    <div class="tab-pane fade" id="register" role="tabpanel" aria-labelledby="register-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title text-center mb-4">Registro de Usuario</h3>
+                                <form hx-post="/users/create" hx-target="#create-response">
+                                    <div class="mb-3">
+                                        <label for="registerUsername" class="form-label">Usuario</label>
+                                        <input type="text" class="form-control" id="registerUsername" name="username" required>
+                                        <div class="form-text">Elige un nombre de usuario único.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="registerEmail" class="form-label">Correo electrónico</label>
+                                        <input type="email" class="form-control" id="registerEmail" name="email" aria-describedby="emailHelp" required>
+                                        <div id="emailHelp" class="form-text">Nunca compartiremos tu correo con nadie más.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="registerPassword" class="form-label" name="">Contraseña</label>
+                                        <input type="password" class="form-control" id="registerPassword" name="password" required>
+                                    </div>
+                                    <!-- <div class="mb-3"> -->
+                                    <!--     <label for="registerPasswordConfirm" class="form-label">Confirmar Contraseña</label> -->
+                                    <!--     <input type="password" class="form-control" id="registerPasswordConfirm" required> -->
+                                    <!-- </div> -->
+                                    <!-- <div class="mb-3 form-check"> -->
+                                    <!--     <input type="checkbox" class="form-check-input" id="acceptTerms" required> -->
+                                    <!--     <label class="form-check-label" for="acceptTerms">Acepto los términos y condiciones</label> -->
+                                    <!-- </div> -->
+                                    <input type="submit" class="btn btn-primary w-100" value="Registrarse">
+                                </form>
+				<div id="create-response"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</body>
+</html>
