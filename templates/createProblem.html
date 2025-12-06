@@ -9,11 +9,36 @@
     <link rel="icon" href="favicon.png">
   </head>
   <body>
-    <h1>Problema</h1>
+    <h1>Añade un nuevo problema</h1>
+    <form hx-encoding="multipart/form-data" hx-post="/contests/{{.ID}}/problems/new">
+      <div>
+	Nombre del problema: <input type="text" class="form-control" name="problem-name">
+      </div>
+      <div>
+	Limite de tiempo: <input type="text" class="form-control" name="time-limit">
+      </div>
 
-    {{ .ProblemName }}
-    {{ .SampleInput }}
-    {{ .SampleOutput }}
+      <div>
+	Enunciado: <input type="file" class="form-control" name="description">
+      </div>
+
+      <div>
+	Entrada: <input type="file" class="form-control" name="inputs" multiple>
+      </div>
+
+      <div>
+	Salida: <input type="file" class="form-control" name="outputs" multiple>
+      </div>
+
+      <div class="mt-2">
+	<button class="btn btn-primary" hx-post="/contests/{{.ID}}/problems/new" hx-target="#responseDiv" hx-target="innerHTML">
+	  Enviar
+	</button>
+      </div>
+
+      <div class="mt-2" id="responseDiv">
+      </div>
+    </form>
 
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
   </body>

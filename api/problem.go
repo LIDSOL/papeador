@@ -65,6 +65,7 @@ func (api *ApiContext) createProblem(w http.ResponseWriter, r *http.Request) {
 	timelimit, err := strconv.Atoi(timelimitStr)
 	if err != nil {
 		http.Error(w, "Error en ruta", http.StatusBadRequest)
+		log.Println("Error", err)
 		return
 	}
 
@@ -118,6 +119,7 @@ func (api *ApiContext) createProblem(w http.ResponseWriter, r *http.Request) {
 
 	in.CreatorID = int64(id)
 
+	log.Println("creandoproblema", contestIDStr)
 	if err := api.Store.CreateProblem(r.Context(), &in); err != nil {
 		if err == store.ErrNotFound {
 			http.Error(w, "El concurso no existe", http.StatusConflict)

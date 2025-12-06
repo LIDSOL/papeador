@@ -63,4 +63,5 @@ type Store interface {
 	GetContestByID(ctx context.Context, id int) (Contest, error)
 	GetContestProblems(ctx context.Context, id int) ([]Problem, error)
 	GetProblemByIDs(ctx context.Context, contestID, problemID int) (*Problem, error)
+	GetTestCases(ctx context.Context, problemID int) ([]TestCase, error)
 }

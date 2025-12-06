@@ -251,6 +251,31 @@ func (s *SQLiteStore) CreateTestCase(ctx context.Context, t *TestCase) error {
 	return nil
 }
 
+func (s *SQLiteStore) GetTestCases(ctx context.Context, problemID int) ([]TestCase, error) {
+	rows, err := s.DB.Query("SELECT time_limit, expected_out, given_input from test_case  WHERE problem_id = ?", problemID)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var testcases []TestCase
+
+	for rows.Next() {
+		var t TestCase
+		if err := rows.Scan(&t.TimeLimit, &t.ExpectedOut, &t.GivenInput); err != nil {
+			return testcases, err
+		}
+		testcases = append(testcases, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		return testcases, err
+	}
+
+	return testcases, nil
+}
+
 func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 	var username, storedHash, salt string
 
