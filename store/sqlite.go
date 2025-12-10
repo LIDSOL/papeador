@@ -300,3 +300,56 @@ func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 	return nil
 
 }
+func (s *SQLiteStore) UserScore(ctx context.Context, userID int, score int) error {
+	_, err := s.DB.ExecContext(
+		ctx,
+		"UPDATE user SET total_score = total_score + ? WHERE user_id = ?",
+		score,
+		userID,
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("UserID %d: +%d puntos agregados", userID, score)
+	return nil
+}
+
+func (s *SQLiteStore) GetGlobalRanking(ctx context.Context) ([]UserScore, error) {
+	var ranking []UserScore
+
+	query := `
+		SELECT user_id, total_score
+		FROM user
+		ORDER BY total_score DESC, user_id ASC;
+	`
+
+	rows, err := s.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rankCounter := 1
+	for rows.Next() {
+		var userID int
+		var score int
+
+		if err := rows.Scan(&userID, &score); err != nil {
+			return nil, err
+		}
+
+		ranking = append(ranking, UserScore{
+			Rank:   rankCounter,
+			UserID: userID,
+			Score:  score,
+		})
+		rankCounter++
+	}
+
+	if rows.Err() != nil {
+		return nil, err
+	}
+
+	return ranking, nil
+}

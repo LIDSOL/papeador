@@ -48,6 +48,15 @@ type TestCase struct {
 	ExpectedOut []byte `json:"expected_out"`
 	GivenInput  []byte `json:"given_input"`
 }
+type UserScore struct {
+	Rank   int `json:"rank"`
+	UserID int `json:"user_id"`
+	Score  int `json:"score"`
+}
+type ScoringInput struct {
+	Status        string
+	ExecutionTime float64
+}
 
 // Store defines persistence operations used by the HTTP layer.
 type Store interface {
@@ -64,4 +73,6 @@ type Store interface {
 	GetContestProblems(ctx context.Context, id int) ([]Problem, error)
 	GetProblemByIDs(ctx context.Context, contestID, problemID int) (*Problem, error)
 	GetTestCases(ctx context.Context, problemID int) ([]TestCase, error)
+	UserScore(ctx context.Context, userID int, score int) error
+	GetGlobalRanking(ctx context.Context) ([]UserScore, error)
 }
