@@ -196,7 +196,7 @@ func CalculateAndUpdateRanking(
 		return nil, fmt.Errorf("error al actualizar puntaje en store: %w", err)
 	}
 
-	ranking, err := s.GetGlobalRanking(ctx)
+	ranking, err := s.GetRanking(ctx)
 	if err != nil {
 		log.Printf("Error al obtener ranking: %v", err)
 		return nil, fmt.Errorf("error al obtener ranking del store: %w", err)

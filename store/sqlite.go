@@ -315,13 +315,26 @@ func (s *SQLiteStore) UserScore(ctx context.Context, userID int, score int) erro
 	return nil
 }
 
-func (s *SQLiteStore) GetGlobalRanking(ctx context.Context) ([]UserScore, error) {
+func (s *SQLiteStore) GetRanking(ctx context.Context) ([]UserScore, error) {
 	var ranking []UserScore
 
 	query := `
-		SELECT user_id, total_score
-		FROM user
-		ORDER BY total_score DESC, user_id ASC;
+		SELECT
+    	  subm.user_id,
+    	  USR.username,
+    	  SUM(subm.score) AS total_score
+		FROM
+    	  submission subm
+		JOIN
+	      contest_has_problem C_h_p ON subm.problem_id = C_h_p.problem_id
+		JOIN
+    	  user USR ON subm.user_id = USR.user_id
+		WHERE
+    		C_h_p.contest_id = ?
+		GROUP BY
+    	  subm.user_id, USR.username
+		ORDER BY
+    	total_score DESC, subm.user_id ASC;
 	`
 
 	rows, err := s.DB.QueryContext(ctx, query)

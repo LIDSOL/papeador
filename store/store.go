@@ -74,5 +74,5 @@ type Store interface {
 	GetProblemByIDs(ctx context.Context, contestID, problemID int) (*Problem, error)
 	GetTestCases(ctx context.Context, problemID int) ([]TestCase, error)
 	UserScore(ctx context.Context, userID int, score int) error
-	GetGlobalRanking(ctx context.Context) ([]UserScore, error)
+	GetRanking(ctx context.Context) ([]UserScore, error)
 }
