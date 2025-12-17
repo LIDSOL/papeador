@@ -300,20 +300,6 @@ func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 	return nil
 
 }
-func (s *SQLiteStore) UserScore(ctx context.Context, userID int, score int) error {
-	_, err := s.DB.ExecContext(
-		ctx,
-		"UPDATE user SET total_score = total_score + ? WHERE user_id = ?",
-		score,
-		userID,
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("UserID %d: +%d puntos agregados", userID, score)
-	return nil
-}
 
 func (s *SQLiteStore) GetRanking(ctx context.Context) ([]UserScore, error) {
 	var ranking []UserScore

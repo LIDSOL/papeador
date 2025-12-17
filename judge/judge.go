@@ -19,7 +19,7 @@ import (
 	"github.com/containers/podman/v5/pkg/domain/entities/types"
 	"github.com/containers/podman/v5/pkg/specgen"
 	dockerContainer "github.com/docker/docker/api/types/container"
-	"lidsol.org/papeador/store"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -176,6 +176,8 @@ func StartSandbox(conn context.Context, createResponse types.ContainerCreateResp
 	return nil
 }
 
+/*
+///Open function to calculate and update ranking after a submission is judged (suggestion)
 func CalculateAndUpdateRanking(
 	ctx context.Context,
 	s store.Store,
@@ -205,23 +207,6 @@ func CalculateAndUpdateRanking(
 	PrintRanking(ranking)
 	return ranking, nil
 }
-
-// ---------------------------------------------------------
-// funcion adicional para imprimir el ranking
-func PrintRanking(ranking []store.UserScore) {
-	fmt.Println("\n==============================================")
-	fmt.Println(" RANKING DE USUARIOS ")
-	fmt.Println("----------------------------------------------")
-	fmt.Printf("%-5s | %-15s | %s\n", "RANK", "USER", "POINTS")
-	fmt.Println("----------------------------------------------")
-
-	for _, user := range ranking {
-		fmt.Printf("%-5d | %-15d | %d\n", user.Rank, user.UserID, user.Score)
-	}
-	fmt.Println("==============================================")
-}
-
-// funcion provicional para calcular el puntaje de un solo usuario
 func calculateSingleScore(sub store.ScoringInput) int {
 	return 0
-}
+}*/
