@@ -8,11 +8,11 @@ import (
 )
 
 type Params struct {
-    Memory      uint32
-    Iterations  uint32
-    Parallelism uint8
-    SaltLength  uint32
-    KeyLength   uint32
+	Memory      uint32
+	Iterations  uint32
+	Parallelism uint8
+	SaltLength  uint32
+	KeyLength   uint32
 }
 
 var Argon2Params *Params = &Params{
@@ -57,7 +57,7 @@ func HashPassword(password string, p *Params) (hash, salt []byte, err error) {
 	return hash, salt, nil
 }
 
-func generateSalt( n uint32) ([]byte, error) {
+func generateSalt(n uint32) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
 	if err != nil {

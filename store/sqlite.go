@@ -61,7 +61,6 @@ func (s *SQLiteStore) CreateUser(ctx context.Context, u *User) error {
 		return err
 	}
 
-
 	if id, ierr := res.LastInsertId(); ierr == nil {
 		u.UserID = id
 		u.JWT = token
@@ -296,10 +295,60 @@ func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 	if !val {
 		log.Println("ERR", err)
 		return security.ErrInvalidCredentials
-	}	
+	}
 
 	return nil
-	
+
 }
 
+func (s *SQLiteStore) GetRanking(ctx context.Context) ([]UserScore, error) {
+	var ranking []UserScore
 
+	query := `
+		SELECT
+    	  subm.user_id,
+    	  USR.username,
+    	  SUM(subm.score) AS total_score
+		FROM
+    	  submission subm
+		JOIN
+	      contest_has_problem C_h_p ON subm.problem_id = C_h_p.problem_id
+		JOIN
+    	  user USR ON subm.user_id = USR.user_id
+		WHERE
+    		C_h_p.contest_id = ?
+		GROUP BY
+    	  subm.user_id, USR.username
+		ORDER BY
+    	total_score DESC, subm.user_id ASC;
+	`
+
+	rows, err := s.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rankCounter := 1
+	for rows.Next() {
+		var userID int
+		var score int
+
+		if err := rows.Scan(&userID, &score); err != nil {
+			return nil, err
+		}
+
+		ranking = append(ranking, UserScore{
+			Rank:   rankCounter,
+			UserID: userID,
+			Score:  score,
+		})
+		rankCounter++
+	}
+
+	if rows.Err() != nil {
+		return nil, err
+	}
+
+	return ranking, nil
+}

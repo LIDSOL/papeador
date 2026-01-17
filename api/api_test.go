@@ -83,7 +83,7 @@ func TestCreateUser(t *testing.T) {
 	clearUserTable()
 	newUser := store.User{
 		Username: "testuser",
-		Passhash: "testpass",
+		Password: "testpass",
 		Email:    "test@example.com",
 	}
 
