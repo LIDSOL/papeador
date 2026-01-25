@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"time"
 
 	"lidsol.org/papeador/security"
 )
@@ -302,4 +303,153 @@ func (s *SQLiteStore) Login(ctx context.Context, u *User) error {
 	
 }
 
+func (s *SQLiteStore) GetProblemScore(ctx context.Context, problemID int) (int, error) {
+	var score int
+	err := s.DB.QueryRowContext(ctx, "SELECT base_score FROM problem WHERE problem_id = ?", problemID).Scan(&score)
+	if err == sql.ErrNoRows {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+	return score, nil
+}
 
+// Calculamos el puntaje de una subission usando la formula de Codeforces:
+// max(0.3⋅x, x−⌊(120x⋅t)/(250d)⌋−50w)
+// 
+// x = el puntaje incial del problema
+// t = tiempo en minutos cuando se resolvió el problema
+// d = duración del concurso en minutos
+// w = número de envíos incorrectos antes del primero aceptado
+func (s *SQLiteStore) CalculateSubmissionScore(ctx context.Context, submissionID int64) (int, error) {
+	var (
+		baseScore       int
+		submissionDate  string
+		contestStart    string
+		contestEnd      string
+		userID          int64
+		problemID       int64
+		statusID        int64
+	)
+	
+	query := `
+		SELECT 
+			p.base_score,
+			s.date,
+			c.start_date,
+			c.end_date,
+			s.user_id,
+			s.problem_id,
+			s.status_id
+		FROM submission s
+		JOIN problem p ON s.problem_id = p.problem_id
+		JOIN contest_has_problem chp ON p.problem_id = chp.problem_id
+		JOIN contest c ON chp.contest_id = c.contest_id
+		WHERE s.submission_id = ?
+	`
+	
+	err := s.DB.QueryRowContext(ctx, query, submissionID).Scan(
+		&baseScore, &submissionDate, &contestStart, &contestEnd, 
+		&userID, &problemID, &statusID,
+	)
+	if err == sql.ErrNoRows {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+	
+	contestDuration, err := calculateDurationInMinutes(contestStart, contestEnd)
+	if err != nil {
+		return 0, err
+	}
+	
+	submissionTime, err := calculateDurationInMinutes(contestStart, submissionDate)
+	if err != nil {
+		return 0, err
+	}
+	
+	wrongSubmissionsQuery := `
+		SELECT COUNT(*) 
+		FROM submission 
+		WHERE user_id = ? 
+		AND problem_id = ? 
+		AND submission_id < ? 
+		AND status_id != 1
+	`
+	
+	var wrongSubmissions int
+	err = s.DB.QueryRowContext(ctx, wrongSubmissionsQuery, userID, problemID, submissionID).Scan(&wrongSubmissions)
+	if err != nil {
+		return 0, err
+	}
+	
+	// aplicamos la formula
+	x := float64(baseScore)
+	t := float64(submissionTime)
+	d := float64(contestDuration)
+	w := float64(wrongSubmissions)
+	
+	minScore := 0.3 * x
+	timeDecay := float64(int((120 * x * t) / (250 * d)))
+	penaltyScore := x - timeDecay - (50 * w)
+	
+	var finalScore int
+	if penaltyScore > minScore {
+		finalScore = int(penaltyScore)
+	} else {
+		finalScore = int(minScore)
+	}
+	
+	return finalScore, nil
+}
+
+
+// Para el calulo uso el formato de tiempo YYYY-MM-DDTHH:mm:ssZ por default
+func calculateDurationInMinutes(start, end string) (int, error) {
+	const layout = "2006-01-01 12:12:12"
+	
+	startTime, err := parseFlexibleTime(start, layout)
+	if err != nil {
+		return 0, err
+	}
+	
+	endTime, err := parseFlexibleTime(end, layout)
+	if err != nil {
+		return 0, err
+	}
+	
+	duration := endTime.Sub(startTime)
+	minutes := int(duration.Minutes())
+	
+	return minutes, nil
+}
+
+
+func parseFlexibleTime(timeStr, preferredLayout string) (time.Time, error) {
+	t, err := time.Parse(preferredLayout, timeStr)
+	if err == nil {
+		return t, nil
+	}
+	
+	t, err = time.Parse(time.RFC3339, timeStr)
+	if err == nil {
+		return t, nil
+	}
+	
+	layouts := []string{
+		"2006-01-02T15:04:05",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+	
+	for _, layout := range layouts {
+		t, err = time.Parse(layout, timeStr)
+		if err == nil {
+			return t, nil
+		}
+	}
+	
+	return time.Time{}, err
+}
