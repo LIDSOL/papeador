@@ -33,7 +33,7 @@ type Problem struct {
 	CreatorID      int64  `json:"creator_id"`
 	ProblemName    string `json:"problem_name"`
 	BaseScore      string `json:"base_score"`
-	Description    []byte `json:"description"`
+	Description    string `json:"description"`
 	SampleInput    []byte `json:"sample_input"`
 	SampleOut      []byte `json:"sample_out"`
 	SampleInputStr string `json:"sample_input_str"`

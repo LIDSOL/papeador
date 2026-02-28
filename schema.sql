@@ -43,7 +43,7 @@ create table if not exists problem (
     creator_id	 integer not null,
     problem_name text    not null,
     base_score	 integer not null,
-    description  blob    not null,
+    description  text    not null,
     constraint fk_creator
 	foreign key (creator_id)
 	references user(user_id)
