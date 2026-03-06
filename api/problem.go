@@ -2,11 +2,17 @@ package api
 
 import (
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
+
+	"lidsol.org/papeador/security"
 	"lidsol.org/papeador/store"
 )
 
@@ -69,8 +75,7 @@ func (api *ApiContext) createProblem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	in.Description = r.FormValue("description")
-	log.Println("DESCRIPTION\n", in.Description)
+	in.Description = []byte(r.FormValue("description"))
 
 	err = r.ParseMultipartForm(8 << 20)
 	if err != nil {
@@ -78,13 +83,6 @@ func (api *ApiContext) createProblem(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error", err)
 		return
 	}
-
-	// description, err := getRequestFileContents(r, "description")
-	// if err != nil {
-	// 	http.Error(w, "Error al leer el enunciado", http.StatusInternalServerError)
-	// 	log.Println("Error", err)
-	// 	return
-	// }
 
 	inputs, err := getFileGroup(r, "inputs")
 	if err != nil {
@@ -188,6 +186,8 @@ func (api *ApiContext) getProblemByID(w http.ResponseWriter, r *http.Request) {
 	}
 	problem.SampleInputStr = string(problem.SampleInput)
 	problem.SampleOutStr = string(problem.SampleOut)
+	problem.Description = security.SanitizeHtml(mdToHTML(problem.Description))
+	problem.DescriptionHTML = template.HTML(string(problem.Description))
 
 	type pageInfo struct {
 		store.Problem
@@ -207,31 +207,16 @@ func (api *ApiContext) getProblemByID(w http.ResponseWriter, r *http.Request) {
 	templates.ExecuteTemplate(w, "problem.html", &info)
 }
 
-// func (api *ApiContext) getProblemStatementByID(w http.ResponseWriter, r *http.Request) {
-// 	contestIDStr := r.PathValue("contestID")
-// 	contestID, err := strconv.Atoi(contestIDStr)
-// 	if err != nil {
-// 		http.Error(w, "Error en ruta", http.StatusBadRequest)
-// 		log.Println("Error", err)
-// 		return
-// 	}
+func mdToHTML(md []byte) []byte {
+	// create markdown parser with extensions
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock | parser.MathJax
+	p := parser.NewWithExtensions(extensions)
+	doc := p.Parse([]byte(md))
 
-// 	problemIDStr := r.PathValue("problemID")
-// 	problemID, err := strconv.Atoi(problemIDStr)
-// 	if err != nil {
-// 		http.Error(w, "Error en ruta", http.StatusBadRequest)
-// 		log.Println("Error", err)
-// 		return
-// 	}
+	// create HTML renderer with extensions
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
 
-// 	problem, err := api.Store.GetProblemByIDs(r.Context(), contestID, problemID)
-// 	if err != nil {
-// 		http.Error(w, "Error al buscar problema", http.StatusBadRequest)
-// 		log.Println("Error", err)
-// 		return
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/pdf")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write(problem.Description)
-// }
+	return markdown.Render(doc, renderer)
+}

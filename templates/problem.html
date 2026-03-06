@@ -49,7 +49,7 @@
                         <h5 class="mb-0">Enunciado del Problema</h5>
                     </div>
                     <!-- <embed class="card-body bg-secondary-subtle d-flex align-items-center justify-content-center" style="min-height: 600px;" src="/contests/{{.ContestID}}/problems/{{.ProblemID}}/pdf" type="application/pdf" /> -->
-                        {{.Description}}
+                        {{.DescriptionHTML}}
                 </div>
             </div>
             <div class="col-lg-4 d-flex flex-column h-100">
@@ -84,6 +84,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
 </body>
 
 </html>

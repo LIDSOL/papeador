@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"errors"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 var (
@@ -57,4 +59,8 @@ func ValidateEmail(email string) (string, error) {
 	}
 
 	return strings.ToLower(email), nil
+}
+
+func SanitizeHtml(html []byte) []byte {
+	return bluemonday.UGCPolicy().SanitizeBytes(html);
 }
