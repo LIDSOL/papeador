@@ -24,7 +24,6 @@ var Argon2Params *Params = &Params{
 }
 
 func VerifyHash(password, storedHash, salt []byte, p *Params) (bool, error) {
-	log.Println("HOLA")
 	otherHash, err := HashPasswordWithSalt(string(password), salt, p)
 	if err != nil {
 		return false, err

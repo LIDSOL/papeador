@@ -17,7 +17,6 @@ import (
 var m sync.Mutex
 
 func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("HOLA A TODOS")
 	err := r.ParseMultipartForm(8 << 20)
 	if err != nil {
 		http.Error(w, "Los archivos deben ser, como máximo, de 8 MiB", http.StatusBadRequest)

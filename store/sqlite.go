@@ -218,7 +218,6 @@ func (s *SQLiteStore) GetProblemByIDs(ctx context.Context, contestID, problemID 
 	} else if err != nil {
 		return nil, err
 	}
-	log.Println("HOLA")
 
 	err = s.DB.QueryRowContext(ctx, "SELECT t.expected_out, t.given_input from test_case t JOIN problem p ON p.problem_id = t.problem_id WHERE t.problem_id = ? ORDER BY t.num_test_case ASC LIMIT 1", p.ProblemID).Scan(&p.SampleOut, &p.SampleInput)
 	if err == sql.ErrNoRows {
