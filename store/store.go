@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"html/template"
 )
 
 var (
@@ -34,6 +35,7 @@ type Problem struct {
 	ProblemName    string `json:"problem_name"`
 	BaseScore      string `json:"base_score"`
 	Description    []byte `json:"description"`
+	DescriptionHTML template.HTML `json:"description_str"`
 	SampleInput    []byte `json:"sample_input"`
 	SampleOut      []byte `json:"sample_out"`
 	SampleInputStr string `json:"sample_input_str"`

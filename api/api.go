@@ -40,7 +40,7 @@ func API(s store.Store, port int) {
 	mux.HandleFunc("POST /contests/{id}/problems/new", apiCtx.createProblem)
 	mux.HandleFunc("GET /contests/{id}/new-problem", apiCtx.createProblemView)
 	mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}", apiCtx.getProblemByID)
-	mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}/pdf", apiCtx.getProblemStatementByID)
+	// mux.HandleFunc("GET /contests/{contestID}/problems/{problemID}/pdf", apiCtx.getProblemStatementByID)
 
 	mux.HandleFunc("POST /contests/{contestID}/problems/{problemID}/submit", apiCtx.submitProgram)
 	// mux.HandleFunc("GET /contests/{constestID}/problems/{problemID}/submit/{submitID}", auth.RequireAuth(apiCtx.getSubmissionByID))

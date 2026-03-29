@@ -9,6 +9,8 @@ require (
 	github.com/containers/podman/v5 v5.6.0
 	github.com/cristalhq/jwt/v5 v5.4.0
 	github.com/docker/docker v28.3.2+incompatible
+	github.com/gomarkdown/markdown v0.0.0-20260217112301-37c66b85d6ab
+	github.com/microcosm-cc/bluemonday v1.0.27
 	golang.org/x/crypto v0.43.0
 	modernc.org/sqlite v1.38.2
 )
@@ -21,6 +23,7 @@ require (
 	github.com/Microsoft/hcsshim v0.13.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
+	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
@@ -58,6 +61,7 @@ require (
 	github.com/google/go-containerregistry v0.20.3 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
