@@ -44,7 +44,7 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(fileHeader.Size, fileHeader.Filename)
 
 	m.Lock()
-	worker := <- *judge.WorkerQueueP
+	worker := <-*judge.WorkerQueueP
 	m.Unlock()
 
 	conn := worker.Ctx
@@ -52,6 +52,7 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 	filenameSep := strings.Split(fileHeader.Filename, ".")
 	filetype := filenameSep[len(filenameSep)-1]
 
+	output := int(0)
 
 	// testcases, err := api.Store.GetTestCases(r.Context(), problemID)
 	testcases := []judge.SubmissionTestCase{
@@ -60,7 +61,7 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 		judge.SubmissionTestCase{Input: "13\n", Output: "6227020800\n"},
 	}
 	timelimit := 1
-	createResponse, err := judge.CreateSandbox(conn, filetype, string(buf)[:n], testcases, timelimit)
+	createResponse, err := judge.CreateSandbox(conn, filetype, string(buf)[:n], testcases, timelimit, output)
 	if err != nil {
 		*judge.WorkerQueueP <- worker
 		s := fmt.Sprintf("Could not create sandbox: %v", err)
@@ -99,7 +100,6 @@ func (api *ApiContext) submitProgram(w http.ResponseWriter, r *http.Request) {
 
 	// Metelo de nuevo
 	*judge.WorkerQueueP <- worker
-
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

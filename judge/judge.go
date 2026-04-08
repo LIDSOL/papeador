@@ -19,13 +19,14 @@ import (
 	"github.com/containers/podman/v5/pkg/domain/entities/types"
 	"github.com/containers/podman/v5/pkg/specgen"
 	dockerContainer "github.com/docker/docker/api/types/container"
+
 	_ "modernc.org/sqlite"
 )
 
 var podmanConns []*Worker
 var workerQueue = make(chan *Worker, 10)
 
-var WorkerQueueP = &workerQueue;
+var WorkerQueueP = &workerQueue
 
 var m sync.Mutex
 
@@ -36,8 +37,8 @@ func ConnectToPodman(connURI string) (context.Context, error) {
 	}
 
 	worker := &Worker{
-		Uri: connURI,
-		Ctx: conn,
+		Uri:       connURI,
+		Ctx:       conn,
 		Available: true,
 	}
 	podmanConns = append(podmanConns, worker)
@@ -52,7 +53,6 @@ func ConnectToPodman(connURI string) (context.Context, error) {
 func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, timeLimit int) error {
 	m.Lock()
 	defer m.Unlock()
-
 
 	err := os.MkdirAll("/vol/podman/inputs", 0755)
 	if err != nil {
@@ -96,7 +96,6 @@ func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, ti
 		testInputPath := fmt.Sprintf("./inputs/%02d.txt", k)
 		expectedOutputPath := fmt.Sprintf("./expected-outputs/%02d.txt", k)
 
-
 		err = writeStringToFile(testInputPath, testcase.Input)
 		if err != nil {
 			return err
@@ -111,7 +110,7 @@ func CreateFiles(filetype, programStr string, testcases []SubmissionTestCase, ti
 	return nil
 }
 
-func CreateSandbox(conn context.Context, filetype, programStr string, testcases []SubmissionTestCase, timeLimit int) (types.ContainerCreateResponse, error) {
+func CreateSandbox(conn context.Context, filetype, programStr string, testcases []SubmissionTestCase, timeLimit int, output int) (types.ContainerCreateResponse, error) {
 
 	err := CreateFiles(filetype, programStr, testcases, timeLimit)
 
@@ -176,3 +175,38 @@ func StartSandbox(conn context.Context, createResponse types.ContainerCreateResp
 
 	return nil
 }
+
+/*
+///Open function to calculate and update ranking after a submission is judged (suggestion)
+func CalculateAndUpdateRanking(
+	ctx context.Context,
+	s store.Store,
+	userID int,
+	status string,
+	executionTime float64) ([]store.UserScore, error) {
+
+	log.Printf("Iniciando cálculo de puntaje para el usuario: %d, status: %s", userID, status)
+	//calculate user score
+	input := store.ScoringInput{Status: status, ExecutionTime: executionTime}
+	score := calculateSingleScore(input)
+
+	log.Printf("Puntaje calculado: %d", score)
+
+	//funcion para cambiar el puntaje del usuario
+	if err := s.UserScore(ctx, userID, score); err != nil {
+		log.Printf("Error al actualizar puntaje del usuario %d: %v", userID, err)
+		return nil, fmt.Errorf("error al actualizar puntaje en store: %w", err)
+	}
+
+	ranking, err := s.GetRanking(ctx)
+	if err != nil {
+		log.Printf("Error al obtener ranking: %v", err)
+		return nil, fmt.Errorf("error al obtener ranking del store: %w", err)
+	}
+
+	PrintRanking(ranking)
+	return ranking, nil
+}
+func calculateSingleScore(sub store.ScoringInput) int {
+	return 0
+}*/

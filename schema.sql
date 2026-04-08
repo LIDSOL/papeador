@@ -5,7 +5,8 @@ create table if not exists user (
     username	 text    not null unique,
     passhash	 text    not null,
     passsalt	 text    not null,
-    email	 text    not null unique
+    email	 text    not null unique,
+    total_score    integer not null default 0
 );
 
 create table if not exists status (
